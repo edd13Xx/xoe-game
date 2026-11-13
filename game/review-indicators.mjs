@@ -15,7 +15,7 @@ for (const device of ["portrait", "landscape", "desktop"]) {
     const desk = page.locator("[data-testid=pro-desk]")
     await desk.waitFor({ state: "visible", timeout: 5000 })
     const chart = page.locator("svg[data-snl-chart]")
-    const btn = page.getByRole("button", { name: "Show EMA 9, EMA 21 and VWAP lines" })
+    const btn = page.getByRole("button", { name: "Show EMA 9, EMA 21, VWAP and RSI 14" })
     rec.btnVisible = await btn.isVisible()
     rec.btnPressed = await btn.getAttribute("aria-pressed")
     rec.indOn = await chart.getAttribute("data-indicators")

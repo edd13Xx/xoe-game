@@ -148,7 +148,7 @@ export function TradeSimArena({
           <span className="fine">XOE</span>
         </div>
         <p className="fine trade-sim-note">
-          Ship = XOE/USD ${formatXoeTickPrice(price)} · vol {vol.toFixed(3)} · {XOE_SIM_SAFETY}. {XOE_SIM_LABEL}. Combat is simulated bots — pause or ease anytime.
+          Ship = XOE {formatXoeTickPrice(price)} · vol {vol.toFixed(3)} · {XOE_SIM_SAFETY}. {XOE_SIM_LABEL}. Combat is simulated bots — pause or ease anytime.
         </p>
       </div>
       <svg
@@ -187,7 +187,7 @@ export function TradeSimArena({
         <g transform={`translate(${XOE_X}, ${XOE_Y})`} opacity="0.0">
           {/* layout slot; portrait is HTML beside the RSI box */}
         </g>
-        <text x="10" y="16" fill="#c4b5fd" fontSize="10">${formatXoeTickPrice(price)}{positionSide !== "flat" ? ` · SNL ${positionSide}` : ""}</text>
+        <text x="10" y="16" fill="#c4b5fd" fontSize="10">{formatXoeTickPrice(price)}{positionSide !== "flat" ? ` · SNL ${positionSide}` : ""}</text>
         <text x="10" y={ARENA_H - 8} fill="#94a3b8" fontSize="9">Shield {Math.round(state.shield)}/{SHIELD_MAX} · sim only</text>
       </svg>
       <div className="menu-row trade-sim-controls">

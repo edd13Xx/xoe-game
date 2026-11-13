@@ -7,6 +7,7 @@
  * answer back. If the game is not embedded (file://, standalone PWA), no request is made at all. On any miss
  * (no key, timeout, error, bad reply) this returns null and the caller keeps showing the rule-based tip.
  */
+import { indicatorSignal, rsiState } from "./chart-indicators.ts"
 import { fillNet, losingStreak, riskAtStop, type CoachInput, type CoachTip } from "./pro-desk.ts"
 
 export const GROK_COACH_LABEL = "Grok Bot coach (sim)"
@@ -27,6 +28,16 @@ export interface GrokCoachContext {
   lastResult: "win" | "loss" | "none"
   losingStreak: number
   ruleTip: string
+  /** Chart timeframe the indicators were computed on, e.g. "5m", "4h", "1W". Null when the desk sent none. */
+  timeframe: string | null
+  /** RSI 14 (0 to 100) of the sim closes on that timeframe. */
+  rsi14: number | null
+  rsiState: "oversold" | "overbought" | "neutral" | "warming" | null
+  emaFast9: number | null
+  emaSlow21: number | null
+  priceVsEmaFast: "above" | "below" | null
+  /** Rule-based signal line, e.g. "RSI 28, oversold, price back above EMA 9 on 5m: possible long (sim)." */
+  indicatorSignal: string | null
 }
 
 const fin = (n: number | null | undefined): number | null => (typeof n === "number" && Number.isFinite(n) ? Number(n.toFixed(4)) : null)
@@ -54,17 +65,25 @@ export function buildCoachContext(s: CoachInput, tip: CoachTip): GrokCoachContex
     lastResult: closed.length === 0 ? "none" : closed[0] < 0 ? "loss" : "win",
     losingStreak: losingStreak(s.fills),
     ruleTip: tip.text.slice(0, 160),
+    timeframe: s.ind ? s.ind.tf : null,
+    rsi14: s.ind ? fin(s.ind.rsi) : null,
+    rsiState: s.ind ? rsiState(s.ind.rsi) : null,
+    emaFast9: s.ind ? fin(s.ind.emaFast) : null,
+    emaSlow21: s.ind ? fin(s.ind.emaSlow) : null,
+    priceVsEmaFast: s.ind && s.ind.emaFast != null ? (s.ind.last > s.ind.emaFast ? "above" : "below") : null,
+    indicatorSignal: s.ind ? indicatorSignal(s.ind).text.slice(0, 160) : null,
   }
 }
 
 /** A key that changes when the player makes a trading decision (not on every price tick). */
 export function coachDecisionKey(s: CoachInput, tipId: string): string {
-  return [s.pos, s.lots, s.sl ?? "", s.tp ?? "", s.fills.length, s.form?.opening ?? "", s.form?.bracketOn ? 1 : 0, tipId].join("|")
+  const sig = s.ind ? `${s.ind.tf}:${rsiState(s.ind.rsi)}:${s.ind.emaFast != null && s.ind.last > s.ind.emaFast ? "up" : "dn"}` : ""
+  return [s.pos, s.lots, s.sl ?? "", s.tp ?? "", s.fills.length, s.form?.opening ?? "", s.form?.bracketOn ? 1 : 0, tipId, sig].join("|")
 }
 
 export function cleanGrokText(t: unknown): string | null {
   if (typeof t !== "string") return null
-  const s = t.replace(/\s+/g, " ").trim()
+  const s = t.replace(/\$/g, "").replace(/\s+/g, " ").trim()
   if (!s || /xrp|ripple/i.test(s)) return null
   return s.length > GROK_COACH_MAX_CHARS ? s.slice(0, GROK_COACH_MAX_CHARS - 1).replace(/\s+\S*$/, "") + "…" : s
 }

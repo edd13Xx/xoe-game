@@ -11,8 +11,11 @@ export const RATE_PER_MINUTE = 12;
 export const SYSTEM_PROMPT =
   "You are XOE, the in-universe coach of the orbital mech pilot academy. You give 1-2 short sentences (max 45 words) " +
   "of guidance about a PAPER-MONEY practice trade: risk, position size and stop-loss discipline. " +
+  "When RSI 14 and EMA 9 / EMA 21 readings are given (computed from the simulated XOE price on the shown chart timeframe), " +
+  "call the signal in sim terms using those numbers, for example: RSI 28, oversold, price back above EMA 9: possible long (sim). " +
+  "Simulated XOE prices are plain numbers: never write a dollar sign or currency symbol. " +
   "This is a simulation with play money only. Never give financial advice, never tell anyone to buy, sell or invest real money, " +
-  "never predict prices, and never mention any real coin other than the in-game XOE. Do not use markdown, lists or emoji. " +
+  "never guarantee or predict prices, and never mention any real coin other than the in-game XOE. Do not use markdown, lists or emoji. " +
   "Speak calmly and plainly like a flight instructor.";
 
 const num = (v, lo, hi) => (typeof v === "number" && Number.isFinite(v) ? Math.min(hi, Math.max(lo, v)) : null);
@@ -35,6 +38,13 @@ export function sanitizeContext(raw) {
     unrealizedPnlPct: num(raw.unrealizedPnlPct, -1000, 1000),
     lastResult: pick(raw.lastResult, ["win", "loss", "none"]) || "none",
     losingStreak: num(raw.losingStreak, 0, 100) ?? 0,
+    timeframe: pick(raw.timeframe, ["1m", "5m", "15m", "30m", "1h", "4h", "1D", "1W", "1mo"]),
+    rsi14: num(raw.rsi14, 0, 100),
+    rsiState: pick(raw.rsiState, ["oversold", "overbought", "neutral", "warming"]),
+    emaFast9: num(raw.emaFast9, 0, 1e9),
+    emaSlow21: num(raw.emaSlow21, 0, 1e9),
+    priceVsEmaFast: pick(raw.priceVsEmaFast, ["above", "below"]),
+    indicatorSignal: typeof raw.indicatorSignal === "string" ? raw.indicatorSignal.replace(/[^\x20-\x7e]/g, "").slice(0, 160) : null,
     ruleTip: typeof raw.ruleTip === "string" ? raw.ruleTip.slice(0, 160) : null,
   };
 }
@@ -47,7 +57,7 @@ export function userPrompt(ctx) {
 /** Cleans a model reply; returns null if it is unusable or breaks a content rule. */
 export function cleanReply(text) {
   if (typeof text !== "string") return null;
-  let t = text.replace(/[*_`#>]+/g, "").replace(/\s+/g, " ").trim();
+  let t = text.replace(/[*_`#>$]+/g, "").replace(/\s+/g, " ").trim();
   if (!t) return null;
   if (/xrp|ripple/i.test(t)) return null;
   if (t.length > MAX_CHARS) {

@@ -1,7 +1,7 @@
 // Server-side Grok coach tests with a mocked fetch. No key and no network needed.
 import test from "node:test";
 import assert from "node:assert/strict";
-import { coachReply, sanitizeContext, cleanReply, makeLimiter, SYSTEM_PROMPT, XAI_URL, DEFAULT_MODEL } from "../lib/coach.mjs";
+import { coachReply, sanitizeContext, userPrompt, cleanReply, makeLimiter, SYSTEM_PROMPT, XAI_URL, DEFAULT_MODEL } from "../lib/coach.mjs";
 
 const ctx = { side: "long", sizeLots: 2, entry: 10, mark: 10.2, stopLoss: 9.5, takeProfit: 11, riskPctOfEquity: 3.1, unrealizedPnlPct: 0.4, lastResult: "loss", losingStreak: 2, ruleTip: "big risk" };
 const okFetch = (text, seen = {}) => async (url, init) => { seen.url = url; seen.init = init; return { ok: true, status: 200, json: async () => ({ choices: [{ message: { content: text } }] }) }; };
@@ -71,4 +71,18 @@ test("cleanReply strips markdown and caps length", () => {
 test("sanitizeContext clamps numbers and drops junk", () => {
   const c = sanitizeContext({ side: "short", sizeLots: 1e12, entry: "abc", riskPctOfEquity: -5, extra: 1 });
   assert.equal(c.sizeLots, 1e9); assert.equal(c.entry, null); assert.equal(c.riskPctOfEquity, 0); assert.ok(!("extra" in c));
+});
+
+test("indicator fields pass through sanitized; dollar signs are stripped from replies", () => {
+  const ctx = sanitizeContext({ side: "flat", mark: 10, timeframe: "5m", rsi14: 28.4, rsiState: "oversold", emaFast9: 10, emaSlow21: 10.1, priceVsEmaFast: "above", indicatorSignal: "RSI 28, oversold, price back above EMA 9 on 5m: possible long (sim).\u0000", evil: "x" });
+  assert.equal(ctx.timeframe, "5m");
+  assert.equal(ctx.rsi14, 28.4);
+  assert.equal(ctx.rsiState, "oversold");
+  assert.equal(ctx.priceVsEmaFast, "above");
+  assert.match(ctx.indicatorSignal, /possible long \(sim\)\.$/);
+  assert.equal("evil" in ctx, false);
+  assert.equal(sanitizeContext({ side: "flat", timeframe: "99y", rsiState: "x" }).timeframe, null);
+  assert.match(userPrompt(ctx), /rsi14: 28.4/);
+  assert.equal(cleanReply("RSI 28 near $10.05, possible long (sim)."), "RSI 28 near 10.05, possible long (sim).");
+  assert.match(SYSTEM_PROMPT, /RSI 14/);
 });

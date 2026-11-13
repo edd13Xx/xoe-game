@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { noDollar } from "../game/pro-desk.ts"
+import { EMA_FAST, EMA_SLOW, emaSeries, rsiSeries, type IndicatorSnap } from "../game/chart-indicators.ts"
 import { GROK_COACH_LABEL, buildCoachContext, coachDecisionKey, requestGrokCoach } from "../game/grok-coach.ts"
 import { BOOK_TICK_MS, bookDecimals, type BookLevel } from "../game/paper-advanced.ts"
 import {
@@ -74,7 +76,7 @@ import {
   type SnlBook,
   type SnlSide,
 } from "../game/snl-listing.ts"
-import { formatPnlSim } from "../game/economy.ts"
+import { formatPnlSim as formatPnlSimUsd } from "../game/economy.ts"
 import { clampXoeSimPrice } from "../game/xoe-sim-price.ts"
 import { readFightDifficulty } from "../game/combat.ts"
 import { getLocalStore } from "../game/safe-storage.ts"
@@ -84,6 +86,9 @@ import { ProCandleChart, ProDepthChart, useBox } from "./ProCharts.tsx"
 
 type PanelTab = "chart" | "book" | "trades"
 type LowerTab = "open" | "positions" | "balances" | "fills" | "pnl" | "alerts" | "arena"
+
+/** Sim money on the desk shows plain numbers, never a dollar sign. */
+const formatPnlSim = (n: number, sign = true) => noDollar(formatPnlSimUsd(n, sign))
 
 function pad2(n: number) {
   return String(n).padStart(2, "0")
@@ -402,7 +407,16 @@ export function ProDesk({
   const riskNow = showBracket && useBracket ? riskAtStop(action === "short" ? "short" : "long", snap.equity, mark, riskSl, lots) : null
   // Desk coach (sim). The rule-based tip is always computed and shown first. When the game is embedded in the NEAR demo
   // page, a Grok answer may replace it (via the host page, see grok-coach.ts). It never places or changes orders.
+  // RSI 14 + EMA 9/21 from the same bars the chart shows, so the coach reads what the player sees (sim).
+  const indLast = shownBars[shownBars.length - 1]
+  const indRsi = rsiSeries(shownBars)
+  const indFast = emaSeries(shownBars, EMA_FAST)
+  const indSlow = emaSeries(shownBars, EMA_SLOW)
+  const ind: IndicatorSnap | undefined = indLast
+    ? { tf: TF_LABEL[tf].text, last: indLast.c, rsi: indRsi[indRsi.length - 1] ?? null, emaFast: indFast[indFast.length - 1] ?? null, emaSlow: indSlow[indSlow.length - 1] ?? null }
+    : undefined
   const coachInput: CoachInput = {
+    ind,
     pos: posSide,
     entry: snap.entry,
     mark: snap.mark,
@@ -529,12 +543,12 @@ export function ProDesk({
                 type="button"
                 className={`pd-seg-btn pd-ind-btn${showInd && view === "candles" ? " on" : ""}`}
                 aria-pressed={showInd}
-                aria-label="Show EMA 9, EMA 21 and VWAP lines"
-                title="EMA 9 / EMA 21 / VWAP (sim)"
+                aria-label="Show EMA 9, EMA 21, VWAP and RSI 14"
+                title="EMA 9 / EMA 21 / VWAP / RSI 14 (sim)"
                 disabled={view !== "candles"}
                 onClick={() => setShowInd((v) => !v)}
               >
-                EMA
+                EMA · RSI
               </button>
             </div>
           </div>
@@ -702,11 +716,11 @@ export function ProDesk({
           <dl className="pd-est">
             <div>
               <dt>Est. total</dt>
-              <dd data-testid="est-total">${estTotal.toFixed(3)}</dd>
+              <dd data-testid="est-total">{estTotal.toFixed(3)}</dd>
             </div>
             <div>
               <dt>Fee ({(feeRate * 100).toFixed(2)}%)</dt>
-              <dd>${estFee.toFixed(4)}</dd>
+              <dd>{estFee.toFixed(4)}</dd>
             </div>
             <div>
               <dt>Available</dt>
@@ -838,7 +852,7 @@ export function ProDesk({
           ) : null}
           {lower === "balances" ? (
             <dl className="pd-pos-grid" aria-label="Sim balances">
-              <div><dt>Cash (USD)</dt><dd data-snl-cash="1">{formatPnlSim(snap.cash, false)}</dd></div>
+              <div><dt>Cash</dt><dd data-snl-cash="1">{formatPnlSim(snap.cash, false)}</dd></div>
               <div><dt>Equity</dt><dd data-snl-equity="1">{formatPnlSim(snap.equity, false)}</dd></div>
               <div><dt>XOE position</dt><dd>{posSide === "short" ? "-" : ""}{snap.size.toFixed(2)} XOE</dd></div>
               <div><dt>Realized P/L</dt><dd>{formatPnlSim(snap.realized, true)}</dd></div>

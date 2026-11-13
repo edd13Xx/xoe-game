@@ -73,3 +73,88 @@ export function seriesPaths(series: readonly (number | null)[], x: (i: number) =
   })
   return d
 }
+
+// ---------------------------------------------------------------- RSI (14) and the coach signal
+
+export const RSI_LEN = 14
+export const RSI_OVERBOUGHT = 70
+export const RSI_OVERSOLD = 30
+
+/**
+ * Wilder RSI of the candle closes. The first value lands on index `period` (needs period + 1 closes), then
+ * average gain/loss are smoothed the Wilder way. Entries before that are null. Sim candles only.
+ */
+export function rsiSeries(candles: readonly SimCandle[], period = RSI_LEN): (number | null)[] {
+  const out: (number | null)[] = new Array(candles.length).fill(null)
+  if (period < 1 || candles.length < period + 1) return out
+  let gain = 0
+  let loss = 0
+  for (let i = 1; i <= period; i++) {
+    const d = candles[i]!.c - candles[i - 1]!.c
+    if (d >= 0) gain += d
+    else loss -= d
+  }
+  let avgG = gain / period
+  let avgL = loss / period
+  const val = () => (avgL === 0 ? (avgG === 0 ? 50 : 100) : 100 - 100 / (1 + avgG / avgL))
+  out[period] = val()
+  for (let i = period + 1; i < candles.length; i++) {
+    const d = candles[i]!.c - candles[i - 1]!.c
+    avgG = (avgG * (period - 1) + (d > 0 ? d : 0)) / period
+    avgL = (avgL * (period - 1) + (d < 0 ? -d : 0)) / period
+    out[i] = val()
+  }
+  return out
+}
+
+export type RsiState = "oversold" | "overbought" | "neutral" | "warming"
+
+export function rsiState(v: number | null | undefined): RsiState {
+  if (v == null || !Number.isFinite(v)) return "warming"
+  if (v <= RSI_OVERSOLD) return "oversold"
+  if (v >= RSI_OVERBOUGHT) return "overbought"
+  return "neutral"
+}
+
+/** The indicator numbers the desk, the rule-based coach and the Grok coach context all share. */
+export interface IndicatorSnap {
+  /** Timeframe id of the bars these were computed on, e.g. "5m". */
+  tf: string
+  last: number
+  rsi: number | null
+  emaFast: number | null
+  emaSlow: number | null
+}
+
+export type SignalKind = "long" | "short" | "watch" | "neutral" | "warming"
+export interface IndicatorSignal {
+  kind: SignalKind
+  /** One plain line for the coach, always labelled sim. Never advice. */
+  text: string
+}
+
+const r0 = (v: number) => String(Math.round(v))
+const px = (v: number) => v.toFixed(3)
+
+/**
+ * Plain-language signal from RSI 14 and EMA 9 / EMA 21 on the selected timeframe (sim only, not advice).
+ * Oversold and price back above EMA 9: possible long. Overbought and price back below EMA 9: possible short.
+ */
+export function indicatorSignal(s: IndicatorSnap): IndicatorSignal {
+  if (s.rsi == null || s.emaFast == null) return { kind: "warming", text: `Indicators warming up on ${s.tf} (sim): the chart needs a few more bars.` }
+  const rsi = r0(s.rsi)
+  const above = s.last > s.emaFast
+  const state = rsiState(s.rsi)
+  if (state === "oversold") {
+    return above
+      ? { kind: "long", text: `RSI ${rsi}, oversold, price back above EMA ${EMA_FAST} on ${s.tf}: possible long (sim).` }
+      : { kind: "watch", text: `RSI ${rsi}, oversold, price still below EMA ${EMA_FAST} on ${s.tf}: wait for it to climb back above (sim).` }
+  }
+  if (state === "overbought") {
+    return !above
+      ? { kind: "short", text: `RSI ${rsi}, overbought, price back below EMA ${EMA_FAST} on ${s.tf}: possible short (sim).` }
+      : { kind: "watch", text: `RSI ${rsi}, overbought, price still above EMA ${EMA_FAST} on ${s.tf}: stretched, so a tight stop helps (sim).` }
+  }
+  const trend = s.emaSlow == null ? "" : s.emaFast > s.emaSlow ? ", EMA 9 over EMA 21 (up-trend)" : s.emaFast < s.emaSlow ? ", EMA 9 under EMA 21 (down-trend)" : ""
+  return { kind: "neutral", text: `RSI ${rsi}, neutral, price ${above ? "above" : "below"} EMA ${EMA_FAST} (${px(s.emaFast)}) on ${s.tf}${trend}: no signal (sim).` }
+}

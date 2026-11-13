@@ -91,7 +91,7 @@ export function LiveTicker({
             <polyline points={pts} fill="none" stroke="currentColor" strokeWidth="1.6" />
           </svg>
         ) : null}
-        <span className="ticker-price">{displayPx != null ? `$${(focus === XOE_SIM_SYMBOL ? formatXoeTickPrice(displayPx) : formatTickerPrice(displayPx))}` : "—"}</span>
+        <span className="ticker-price">{displayPx != null ? (focus === XOE_SIM_SYMBOL ? formatXoeTickPrice(displayPx) : formatTickerPrice(displayPx)) : "—"}</span>
         {pctLabel ? <span className="ticker-pct">{pctLabel}</span> : null}
         <span className="ticker-switch" aria-hidden="true">⇄</span>
       </button>
@@ -102,7 +102,7 @@ export function LiveTicker({
               .filter((q) => q.symbol !== focus)
               .map((q) => (
                 <span key={`${dup}${q.pair}`} className={`ticker-chip${dir(q.change24hPct ?? q.stepPct)}${dup ? " dup" : ""}`}>
-                  <strong>{q.symbol}{q.simulated ? " sim" : ""}</strong> <span className="chip-px">${formatTickerPrice(q.priceUsd)}</span>
+                  <strong>{q.symbol}{q.simulated ? " sim" : ""}</strong> <span className="chip-px">{formatTickerPrice(q.priceUsd)}</span>
                   <span className="chip-px-short">{formatChipPrice(q.priceUsd)}</span>{" "}
                   <span className="chip-pct">{formatPct(q.change24hPct ?? q.stepPct)}</span>
                 </span>

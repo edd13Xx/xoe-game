@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } f
 import type { SimCandle } from "../game/sim-candles.ts"
 import { depthSeries, fmtPx, fmtVol } from "../game/pro-desk.ts"
 import type { BookLevel } from "../game/paper-advanced.ts"
-import { EMA_FAST, EMA_SLOW, emaSeries, seriesPaths, trendLabel, trendRead, vwapSeries } from "../game/chart-indicators.ts"
+import { EMA_FAST, EMA_SLOW, RSI_LEN, RSI_OVERBOUGHT, RSI_OVERSOLD, emaSeries, rsiSeries, rsiState, seriesPaths, trendLabel, trendRead, vwapSeries } from "../game/chart-indicators.ts"
 
 const UP = "#2ee6c9"
 const DOWN = "#ff6b8b"
@@ -67,8 +67,12 @@ export function ProCandleChart({
   const W = Math.max(200, width)
   const H = Math.max(160, height)
   const plotW = W - AXIS_W
-  const volH = Math.round((H - TIME_H) * 0.18)
-  const priceH = H - TIME_H - volH - 6
+  // RSI sub-pane (sim) sits under the volume bars when the indicators are on.
+  const rsiH = indicators ? Math.max(46, Math.min(72, Math.round(H * 0.2))) : 0
+  const rsiGap = rsiH ? rsiH + 4 : 0
+  const volBase = H - TIME_H - rsiGap
+  const volH = Math.round(volBase * 0.18)
+  const priceH = volBase - volH - 6
   const n = Math.max(1, candles.length)
   const slot = plotW / n
   let hi = -Infinity
@@ -110,10 +114,15 @@ export function ProCandleChart({
   const emaF = indicators ? emaSeries(candles, EMA_FAST) : []
   const emaS = indicators ? emaSeries(candles, EMA_SLOW) : []
   const vwap = indicators ? vwapSeries(candles) : []
+  const rsi = indicators ? rsiSeries(candles) : []
+  const rsiTop = H - TIME_H - rsiH
+  const yR = (v: number) => rsiTop + 3 + (1 - v / 100) * (rsiH - 6)
   const at = hover ?? n - 1
   const cxAt = (i: number) => (i + 0.5) * slot
   const trend = indicators ? trendRead(last?.c, emaF[n - 1], emaS[n - 1]) : "warming"
   const fmtI = (v: number | null | undefined) => (v == null ? "—" : fmtPx(v))
+  const rsiAt = rsi[hover ?? n - 1] ?? null
+  const rsiNow = rsiState(rsiAt)
 
   return (
     <div className="pd-chart-wrap">
@@ -130,6 +139,7 @@ export function ProCandleChart({
                 <span className="pd-ind-k pd-ind-fast">EMA {EMA_FAST} <b>{fmtI(emaF[at])}</b></span>
                 <span className="pd-ind-k pd-ind-slow">EMA {EMA_SLOW} <b>{fmtI(emaS[at])}</b></span>
                 <span className="pd-ind-k pd-ind-vwap">VWAP <b>{fmtI(vwap[at])}</b></span>
+                <span className={`pd-ind-k pd-ind-rsi pd-rsi-${rsiNow}`} data-rsi={rsiAt == null ? "" : rsiAt.toFixed(1)} data-testid="pd-rsi-readout">RSI {RSI_LEN} <b>{rsiAt == null ? "—" : rsiAt.toFixed(1)}</b>{rsiNow === "oversold" ? " oversold" : rsiNow === "overbought" ? " overbought" : ""}</span>
                 <span className={`pd-trend pd-trend-${trend}`} data-trend={trend}>{trendLabel(trend)}</span>
               </>
             ) : null}
@@ -145,7 +155,7 @@ export function ProCandleChart({
         data-snl-chart="1"
         data-candles={candles.length}
         data-indicators={indicators ? "1" : "0"}
-        aria-label={`XOE/USD simulated candlestick chart, last ${last ? fmtPx(last.c) : "n/a"}${indicators ? `, EMA ${EMA_FAST} ${fmtI(emaF[n - 1])}, EMA ${EMA_SLOW} ${fmtI(emaS[n - 1])}, VWAP ${fmtI(vwap[n - 1])}, ${trendLabel(trend)}` : ""}`}
+        aria-label={`XOE simulated candlestick chart, last ${last ? fmtPx(last.c) : "n/a"}${indicators ? `, EMA ${EMA_FAST} ${fmtI(emaF[n - 1])}, EMA ${EMA_SLOW} ${fmtI(emaS[n - 1])}, VWAP ${fmtI(vwap[n - 1])}, RSI ${RSI_LEN} ${rsi[n - 1] == null ? "warming up" : rsi[n - 1]!.toFixed(1)}, ${trendLabel(trend)}` : ""}`}
         onPointerMove={pick}
         onPointerDown={pick}
         onPointerLeave={(e) => {
@@ -188,12 +198,12 @@ export function ProCandleChart({
               <rect
                 className="pd-vol"
                 x={cx - bw / 2}
-                y={H - TIME_H - vh}
+                y={volBase - vh}
                 width={bw}
                 height={vh}
                 fill={color}
                 opacity={0.38}
-                style={{ y: `${H - TIME_H - vh}px`, height: `${vh}px` }}
+                style={{ y: `${volBase - vh}px`, height: `${vh}px` }}
               />
             </g>
           )
@@ -203,6 +213,19 @@ export function ProCandleChart({
             <path className="pd-ind-line pd-ind-vwap" d={seriesPaths(vwap, cxAt, y)} />
             <path className="pd-ind-line pd-ind-slow" d={seriesPaths(emaS, cxAt, y)} />
             <path className="pd-ind-line pd-ind-fast" d={seriesPaths(emaF, cxAt, y)} />
+          </g>
+        ) : null}
+        {indicators ? (
+          <g className="pd-rsi" data-testid="pd-rsi" data-rsi-len={RSI_LEN} pointerEvents="none">
+            <rect className="pd-rsi-bg" x={0} y={rsiTop} width={plotW} height={rsiH} rx={3} />
+            <rect className="pd-rsi-band" x={0} y={yR(RSI_OVERBOUGHT)} width={plotW} height={yR(RSI_OVERSOLD) - yR(RSI_OVERBOUGHT)} />
+            <line className="pd-rsi-ref pd-rsi-ob" x1={0} x2={plotW} y1={yR(RSI_OVERBOUGHT)} y2={yR(RSI_OVERBOUGHT)} />
+            <line className="pd-rsi-ref pd-rsi-os" x1={0} x2={plotW} y1={yR(RSI_OVERSOLD)} y2={yR(RSI_OVERSOLD)} />
+            <text x={W - 4} y={yR(RSI_OVERBOUGHT) + 3} textAnchor="end" className="pd-axis">{RSI_OVERBOUGHT}</text>
+            <text x={W - 4} y={yR(RSI_OVERSOLD) + 3} textAnchor="end" className="pd-axis">{RSI_OVERSOLD}</text>
+            <text x={4} y={rsiTop + 11} className="pd-rsi-tag">RSI {RSI_LEN}</text>
+            <path className={`pd-rsi-line pd-rsi-${rsiNow}`} d={seriesPaths(rsi, cxAt, yR)} />
+            {rsiAt != null ? <circle className={`pd-rsi-dot pd-rsi-${rsiNow}`} cx={cxAt(hover ?? n - 1)} cy={yR(rsiAt)} r={2.6} /> : null}
           </g>
         ) : null}
         {candles.map((c, i) =>

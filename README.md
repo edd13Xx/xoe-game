@@ -13,6 +13,12 @@
 ## The story is already written
 XOE is not a bare demo: it already has an in-depth storyline, playable from the first tap. You pilot XO's mech (the companion calls itself "XOE, Unknown Orbital Engine") across **10 colonies in three chapters**, each a lesson in wallets, keys, fees, scams and phishing. The truth lands soft: you are the key, and every lock you cleared was waiting for you. The keys open a special vault, XO's creation site, and XO gains flight to space and the moons. You choose **Sol or Xelm** and fly toward the **Ragnarok gate**, while a monumental spiritual-mechanical entity approaches the planet. Grok is woven into the narrative, guiding the pilot, and also runs the trading coach (see below). The moons have their own scenes (Xelm aurora and frost spires, Sol blazing horizon and embers).
 
+## Hard rules (locked by the builder)
+1. XOE ticker numbers in the trading sim are simulated and user-generated: no dollar signs, just numbers representing the XOE ticker.
+2. RSI and EMA are integrated into the simulator, computed from the simulated prices, and the coach calls signals off them.
+3. The demo video shows real gameplay: mech, trading desk, coach tip, chart timeframes, ending on the NEAR testnet claim, with the synth track.
+4. All prior locked items remain: coin picture from pump.fun, storyline mention, Wrapped NEAR line, NEAR commitment closing line, all chart timeframes (1m through monthly), music button on the demo page.
+
 ## The problem
 New traders learn by losing real money, and most "learn to trade" apps are boring. XOE teaches trading and wallet safety
 (wallets, keys, fees, scams, phishing, seed backup, leverage, stop-loss and take-profit) inside an arcade mech game. A
@@ -58,7 +64,10 @@ The trade desk's coach tip is rule-based by default. When the game runs inside t
 * **Key safety:** the key is read only from `process.env.XAI_API_KEY` on the server. It is never in the game HTML, the repo or any response. The game itself makes no network call for the coach.
 * **Fallback:** no key, timeout, error, rate limit, bad reply, or opening the game standalone (`file://`) all keep the rule-based tip, instantly. The demo never breaks.
 * **Try it:** `cd demo && XAI_API_KEY=<your key> npm start`, open `http://127.0.0.1:4400`, press **XOE trade desk** in the game, wait a second. → The coach box switches to "Grok Bot coach (sim)" and the page pill says "Grok coach: on". Without the key → rule-based tip and "Grok coach: off".
-* **Test without a key:** `cd demo && npm test` (9 server tests, mocked fetch) and `npm run test:e2e-coach` (real game build through a mock xAI server, both key and no-key cases); `cd game && npx vitest run src/game/grok-coach.test.ts`.
+* **Test without a key:** `cd demo && npm test` (10 server tests, mocked fetch) and `npm run test:e2e-coach` (real game build through a mock xAI server, both key and no-key cases); `cd game && npx vitest run src/game/grok-coach.test.ts`.
+
+### RSI and EMA signals (sim)
+The paper desk chart shows **EMA 9, EMA 21, VWAP and an RSI (14) pane with 70 / 30 lines**, all computed from the simulated XOE prices on the **selected timeframe** (1m to 1M). Ticker, desk and coach show plain numbers, no dollar signs. The coach (rule-based, and the Grok context) reads RSI and EMA and calls signals in sim terms, for example: "RSI 28, oversold, price back above EMA 9 on 5m: possible long (sim)." It is a practice read of simulated prices, not advice, and it never places orders. The sim price is deliberately calm around its anchor, so RSI usually sits near the middle and a live 70 / 30 signal is uncommon; unit tests cover every signal case.
 
 ## How the economy works
 ```
@@ -94,9 +103,9 @@ build (`bash contracts/scripts/build.sh`), then `node demo/scripts/deploy-testne
 **D. Play the game.** `game/dist/index.html` runs standalone in any browser. Tap **Start**, follow the tutorial, and use the practice desk (paper money, labelled SIM).
 
 ## Verification
-* Game: `cd game && npm install && npm run typecheck && npm test` → **488 unit tests pass**; `npm run build`, `npm run test:full` (fresh 10-colony playthrough on desktop, phone portrait and landscape with axe accessibility checks), `node review-near-hook.mjs` (the real game emits the achievement event on a colony clear).
+* Game: `cd game && npm install && npm run typecheck && npm test` → **499 unit tests pass**; `npm run build`, `npm run test:full` (fresh 10-colony playthrough on desktop, phone portrait and landscape with axe accessibility checks), `node review-near-hook.mjs` (the real game emits the achievement event on a colony clear).
 * Contracts: `cd contracts && bash scripts/test.sh` → 36 passed.
-* Demo server: `cd demo && npm test` → 9 passed (Grok coach endpoint, mocked fetch).
+* Demo server: `cd demo && npm test` → 10 passed (Grok coach endpoint, mocked fetch, indicator fields).
 
 ## Screenshots and video
 `media/chart-timeframes-portrait-4h.png`, `chart-timeframes-landscape-1W.png` and `chart-timeframes-desktop-1M.png` (paper-desk chart timeframes 1m, 5m, 15m, 30m, 1h, 4h, 1D, 1W, 1M), `media/demo-page-phone-music.png`, `media/desktop-1-start.png`, `desktop-2-attested.png`, `desktop-3-claimed.png`, `phone-1-demo-top.png`, `phone-2-demo-chain.png`, `phone-3-game.png`, `media/demo-flow.mp4` (silent) and `media/demo-flow-music.mp4` (same demo with the original theme).

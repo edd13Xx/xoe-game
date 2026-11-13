@@ -92,7 +92,7 @@ const XAI_RE = /^https:\/\/api\.x\.ai\//;
  * device: "desktop" (Chromium 1280x800) or "iphone15" (WebKit, Playwright "iPhone 15": 393x659, touch, mobile Safari UA).
  * xai: optional (route, request) => fulfill handler; without it api.x.ai is blocked.
  */
-async function openGame({ device = "desktop", xai = null, seed = loadSeed(), query = "", browserName = process.env.XOE_BROWSER || "chromium", url = null, serviceWorkers = "block" } = {}) {
+async function openGame({ device = "desktop", xai = null, seed = loadSeed(), query = "", browserName = process.env.XOE_BROWSER || "chromium", url = null, serviceWorkers = "block", recordDir = null, viewport = null } = {}) {
   if (!url && !fs.existsSync(BUILD)) throw new Error(`build not found: ${BUILD}`);
   const lib = await pw();
   const phone = device !== "desktop";
@@ -101,11 +101,12 @@ async function openGame({ device = "desktop", xai = null, seed = loadSeed(), que
   const engine = browserName === "webkit" ? lib.webkit : lib.chromium;
   const browser = await engine.launch({ headless: true });
   const iphone = device === "iphone15" ? lib.devices["iPhone 15"] : device === "iphone15-landscape" ? lib.devices["iPhone 15 landscape"] : null;
+  const rec = recordDir ? { recordVideo: { dir: recordDir, size: viewport || { width: 1280, height: 800 } } } : {};
   const context = iphone
     ? await browser.newContext({ ...iphone, reducedMotion: "no-preference", serviceWorkers })
     : phone
     ? await browser.newContext({ viewport: device === "landscape" ? {width:844,height:390} : {width:390,height:844}, hasTouch:true, isMobile:browserName !== "firefox", deviceScaleFactor:1, reducedMotion: "no-preference", serviceWorkers })
-    : await browser.newContext({ viewport: { width: 1280, height: 800 }, deviceScaleFactor: 1, reducedMotion: "no-preference", serviceWorkers });
+    : await browser.newContext({ viewport: viewport || { width: 1280, height: 800 }, deviceScaleFactor: 1, reducedMotion: "no-preference", serviceWorkers, ...rec });
   const net = { coinbase: 0, xai: 0, blocked: [], hosts: new Set() };
   await context.route(/^(https?|wss?):/, async (route) => {
     const url = route.request().url();

@@ -23,7 +23,7 @@ describe("risk-based sizing (sim)", () => {
     expect(r.usd).toBeCloseTo(1, 9)
     expect(r.pct).toBeCloseTo(1, 9)
     expect(riskAtStop("short", 100, 10, 9.5, 20)).toBeNull()
-    expect(riskLine(r)).toMatch(/lose about \$1\.000 \(1\.00% of sim equity\)/)
+    expect(riskLine(r)).toMatch(/lose about 1\.000 \(1\.00% of sim equity\)/)
     expect(RISK_PCTS).toEqual([0.5, 1, 2])
   })
 })

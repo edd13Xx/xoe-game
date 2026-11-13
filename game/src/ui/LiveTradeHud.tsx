@@ -93,7 +93,7 @@ export function LiveTradeHud({
         <div className={`live-trade-quote${flash ? ` flash-${flash}` : tickUp ? " up" : " down"}`}>
           <strong>XOE/USD</strong>
           <span className="live-trade-price">
-            ${formatXoeTickPrice(shown)}
+            {formatXoeTickPrice(shown)}
             <span className="live-trade-dir" aria-hidden="true">{tickUp ? " ▲" : " ▼"}</span>
           </span>
         </div>
@@ -136,7 +136,7 @@ export function LiveTradeHud({
       <p className="fine live-trade-lot">
         {desk.position > 0 && desk.lastAction === "buy" && desk.step === 1
           ? "Starter long · 0.1 XOE · sim only"
-          : `0.1 XOE · $${lotCostUsd(price).toFixed(2)} sim`}
+          : `0.1 XOE · ${lotCostUsd(price).toFixed(2)} sim`}
       </p>
     </div>
     </>

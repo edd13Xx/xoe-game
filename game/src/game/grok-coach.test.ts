@@ -17,7 +17,7 @@ function makeWin(answer?: (msg: any, reply: (d: unknown, source?: unknown) => vo
 describe("grok-coach: context", () => {
   it("sends only trade context and computes risk, pnl and last result", () => {
     const ctx = buildCoachContext({ ...base, fills: [{ id: "a", action: "close", realized: -2, fee: 0.1, at: 5 } as any] }, coachTip(base))
-    expect(Object.keys(ctx).sort()).toEqual(["entry", "lastResult", "losingStreak", "mark", "riskPctOfEquity", "ruleTip", "side", "sizeLots", "state", "stopLoss", "takeProfit", "unrealizedPnlPct"])
+    expect(Object.keys(ctx).sort()).toEqual(["emaFast9", "emaSlow21", "entry", "indicatorSignal", "lastResult", "losingStreak", "mark", "priceVsEmaFast", "riskPctOfEquity", "rsi14", "rsiState", "ruleTip", "side", "sizeLots", "state", "stopLoss", "takeProfit", "timeframe", "unrealizedPnlPct"])
     expect(ctx.side).toBe("long"); expect(ctx.state).toBe("open-position")
     expect(ctx.unrealizedPnlPct).toBeCloseTo(2, 5)
     expect(ctx.lastResult).toBe("loss")

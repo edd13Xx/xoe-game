@@ -3381,3 +3381,20 @@ path.pd-ind-vwap { stroke: #7dd3fc; stroke-dasharray: 5 3; opacity: 0.9; }
 @media (pointer: coarse) {
   .pd-seg.pd-seg-tf .pd-seg-btn { min-height: 48px; min-width: 48px; }
 }
+
+/* RSI (14) sub-pane under the desk chart (sim). 70 / 30 reference lines, shaded neutral band. */
+.pd-rsi-bg { fill: rgba(8, 10, 22, 0.55); stroke: rgba(167, 139, 250, 0.16); stroke-width: 1; }
+.pd-rsi-band { fill: rgba(167, 139, 250, 0.07); }
+.pd-rsi-ref { stroke-width: 1; stroke-dasharray: 4 3; }
+.pd-rsi-ob { stroke: rgba(255, 157, 179, 0.7); }
+.pd-rsi-os { stroke: rgba(95, 240, 216, 0.7); }
+.pd-rsi-tag { fill: #c4b5fd; font-size: 10px; font-weight: 700; }
+.pd-rsi-line { fill: none; stroke: #c4b5fd; stroke-width: 1.6; stroke-linejoin: round; stroke-linecap: round; }
+.pd-rsi-dot { fill: #c4b5fd; }
+path.pd-rsi-overbought, circle.pd-rsi-overbought { stroke: #ff9db3; fill: none; }
+path.pd-rsi-oversold, circle.pd-rsi-oversold { stroke: #5ff0d8; fill: none; }
+circle.pd-rsi-overbought { fill: #ff9db3; }
+circle.pd-rsi-oversold { fill: #5ff0d8; }
+.pd-ohlc .pd-ind-rsi b { color: #c4b5fd; }
+.pd-ohlc .pd-ind-rsi.pd-rsi-overbought, .pd-ohlc .pd-ind-rsi.pd-rsi-overbought b { color: #ff9db3; }
+.pd-ohlc .pd-ind-rsi.pd-rsi-oversold, .pd-ohlc .pd-ind-rsi.pd-rsi-oversold b { color: #5ff0d8; }

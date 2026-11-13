@@ -123,7 +123,7 @@ export function SnlListing({
       <div className="snl-listing-head">
         <span className="snl-pill">{SNL_SYMBOL}</span>
         <p className="snl-price">
-          {SNL_PAIR_LABEL} ${formatXoeTickPrice(px)}
+          {SNL_PAIR_LABEL} {formatXoeTickPrice(px)}
         </p>
         <span className="fine">Tracks XOE/USD sim · {SNL_LOT} lot</span>
       </div>
@@ -149,8 +149,8 @@ export function SnlListing({
         <dl className="snl-pos-grid">
           <div><dt>Side</dt><dd className={`snl-side-${snap.side}`}>{snap.side}</dd></div>
           <div><dt>Size</dt><dd>{snap.lots} × {SNL_LOT} ({snap.size.toFixed(2)})</dd></div>
-          <div><dt>Avg entry</dt><dd>{snap.entry == null ? "—" : `$${formatXoeTickPrice(snap.entry)}`}</dd></div>
-          <div><dt>Mark</dt><dd>${formatXoeTickPrice(snap.mark)}</dd></div>
+          <div><dt>Avg entry</dt><dd>{snap.entry == null ? "—" : formatXoeTickPrice(snap.entry)}</dd></div>
+          <div><dt>Mark</dt><dd>{formatXoeTickPrice(snap.mark)}</dd></div>
           <div>
             <dt>Unrealized P/L</dt>
             <dd data-snl-upnl="1">{formatPnlSim(snap.unrealized, true)}{pct == null ? "" : ` (${pct >= 0 ? "+" : ""}${pct.toFixed(2)}%)`}</dd>
@@ -171,7 +171,7 @@ export function SnlListing({
             </dt>
             <dd data-snl-equity="1">{formatPnlSim(snap.equity, false)}</dd>
           </div>
-          <div><dt>Liq. (sim)</dt><dd>{snap.liq == null || !Number.isFinite(snap.liq) ? "—" : `$${snap.liq.toFixed(3)}`}</dd></div>
+          <div><dt>Liq. (sim)</dt><dd>{snap.liq == null || !Number.isFinite(snap.liq) ? "—" : snap.liq.toFixed(3)}</dd></div>
         </dl>
         {tip ? <p className="snl-tip-copy" role="note">{tip === "cash" ? SNL_CASH_TIP : SNL_EQUITY_TIP}</p> : null}
         <p className="fine">Equity = cash + unrealized P/L. Session P/L {formatPnlSim(snap.session, true)} includes fees. Paper only.</p>
@@ -296,7 +296,7 @@ export function SnlListing({
         <ul className="snl-tape fine" aria-label="Recent simulated trades">
           {tape.map((t, i) => (
             <li key={`${t.at}-${i}`} data-player={t.player ? "1" : "0"}>
-              {t.side} {t.size} @ ${t.price.toFixed(3)}
+              {t.side} {t.size} @ {t.price.toFixed(3)}
               {t.player ? " · you" : ""}
             </li>
           ))}
@@ -325,7 +325,7 @@ export function SnlListing({
           {liveBook.fills.length === 0 ? <li>No paper fills yet.</li> : null}
           {liveBook.fills.map((f) => (
             <li key={f.id}>
-              {f.action} {f.lots} @ ${formatXoeTickPrice(f.price)} · fee {formatPnlSim(-f.fee, true)}
+              {f.action} {f.lots} @ {formatXoeTickPrice(f.price)} · fee {formatPnlSim(-f.fee, true)}
               {f.realized ? ` · realized ${formatPnlSim(f.realized, true)}` : ""}
             </li>
           ))}
@@ -404,7 +404,7 @@ function SnlChart({
       width="100%"
       role="img"
       data-snl-chart="1"
-      aria-label={`SNL ${side} candlestick chart, mark $${formatXoeTickPrice(mark)}`}
+      aria-label={`SNL ${side} candlestick chart, mark ${formatXoeTickPrice(mark)}`}
     >
       <rect width={W} height={H + VH} fill="#0e1020" rx="10" />
       <line x1={padL} y1={y(mark)} x2={W - padR} y2={y(mark)} stroke="#c4b5fd" strokeDasharray="4 3" strokeWidth="1" />

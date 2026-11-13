@@ -155,7 +155,7 @@ export function PracticeView({
                 : `Trade complete. P/L ${formatPnlSim(result, true)}. ${XOE_SIM_SAFETY}.`}
             </p>
           ) : (
-            <p role="status">Live XOE/USD sim · ${livePrice.toFixed(2)} · 0.1 XOE costs ${cost.toFixed(2)} sim</p>
+            <p role="status">Live XOE sim · {livePrice.toFixed(2)} · 0.1 XOE costs {cost.toFixed(2)} sim</p>
           )}
         </div>
       )}

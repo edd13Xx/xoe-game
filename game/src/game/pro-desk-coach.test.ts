@@ -63,3 +63,47 @@ describe("Grok Bot desk coach (sim, rules only)", () => {
     }
   })
 })
+
+import { noDollar, riskLine } from "./pro-desk.ts"
+import { buildCoachContext } from "./grok-coach.ts"
+
+describe("coach signals from RSI 14 and EMA (sim)", () => {
+  const ind = (o: Partial<NonNullable<CoachInput["ind"]>> = {}) => ({ tf: "5m", last: 10.05, rsi: 28, emaFast: 10.0, emaSlow: 10.1, ...o })
+  it("calls a possible long when oversold and price is back above EMA 9", () => {
+    const t = coachTip({ ...base, ind: ind() })
+    expect(t.id).toBe("signal-long")
+    expect(t.text).toMatch(/RSI 28, oversold, price back above EMA 9 on 5m: possible long \(sim\)/)
+  })
+  it("calls a possible short when overbought and price is back below EMA 9", () => {
+    expect(coachTip({ ...base, ind: ind({ rsi: 75, last: 9.9 }) }).id).toBe("signal-short")
+  })
+  it("waits when oversold but still below EMA 9, and reads neutral otherwise", () => {
+    expect(coachTip({ ...base, ind: ind({ last: 9.9 }) }).id).toBe("signal-watch")
+    const n = coachTip({ ...base, ind: ind({ rsi: 50 }) })
+    expect(n.id).toBe("flat")
+    expect(n.text).toMatch(/RSI 50, neutral/)
+  })
+  it("never overrides a safety tip", () => {
+    expect(coachTip(long({ ind: ind() })).id).toBe("no-stop")
+    expect(coachTip(long({ sl: 10.2, ind: ind() })).id).toBe("stop-wrong")
+    expect(coachTip({ ...base, form: { opening: "long", bracketOn: true, sl: 10.5, lots: 5 }, ind: ind() }).id).toBe("form-stop-wrong")
+  })
+  it("flags a stretched RSI against an open position that has a stop", () => {
+    expect(coachTip(long({ sl: 9.9, ind: ind({ rsi: 74, last: 10.2 }) })).id).toBe("signal-stretched")
+    expect(coachTip(long({ sl: 9.9, ind: ind({ rsi: 50 }) })).id).toBe("plan-set")
+  })
+  it("sends RSI, EMA and the signal to the Grok coach context", () => {
+    const input: CoachInput = { ...base, ind: ind() }
+    const ctx = buildCoachContext(input, coachTip(input))
+    expect(ctx).toMatchObject({ timeframe: "5m", rsi14: 28, rsiState: "oversold", emaFast9: 10, emaSlow21: 10.1, priceVsEmaFast: "above" })
+    expect(ctx.indicatorSignal).toMatch(/possible long \(sim\)/)
+    const none = buildCoachContext(base, coachTip(base))
+    expect(none.rsi14).toBeNull()
+    expect(none.indicatorSignal).toBeNull()
+  })
+  it("keeps dollar signs out of desk and coach text for the sim ticker", () => {
+    expect(noDollar("+$0.50 sim")).toBe("+0.50 sim")
+    expect(riskLine({ usd: 1, pct: 1 })).not.toMatch(/\$/)
+    for (const i of [ind(), ind({ rsi: 75, last: 9.9 }), ind({ rsi: 50 }), ind({ last: 9.9 })]) expect(coachTip({ ...base, ind: i }).text).not.toMatch(/\$/)
+  })
+})

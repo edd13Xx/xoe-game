@@ -45,6 +45,16 @@ for (const device of ["portrait", "landscape", "desktop"]) {
       const label = await page.locator("svg[data-snl-chart]").getAttribute("aria-label")
       rec.frames[IDS[i]] = { candles, indicatorPaths: ind, axisSample: await page.locator("svg[data-snl-chart] text.pd-axis").last().innerText().catch(() => "") }
       assert.equal(ind, 3, `${device} ${IDS[i]} EMA/VWAP lines`)
+      // RSI 14 pane: 70/30 lines, a line path, a 0-100 readout, all computed on this timeframe's bars.
+      assert.equal(await page.locator("[data-testid=pd-rsi]").count(), 1, `${device} ${IDS[i]} RSI pane`)
+      assert.equal(await page.locator("[data-testid=pd-rsi] .pd-rsi-ref").count(), 2)
+      assert.ok((await page.locator("[data-testid=pd-rsi] path.pd-rsi-line").getAttribute("d")).length > 20, `${device} ${IDS[i]} RSI line`)
+      const rsiV = Number(await page.locator("[data-testid=pd-rsi-readout]").getAttribute("data-rsi"))
+      assert.ok(rsiV >= 0 && rsiV <= 100, `${device} ${IDS[i]} RSI ${rsiV}`)
+      rec.frames[IDS[i]].rsi = rsiV
+      assert.match(label, /RSI 14/)
+      const deskText = await page.locator("[data-testid=pro-desk]").innerText()
+      assert.equal(/\$/.test(deskText), false, `${device} ${IDS[i]} desk shows a dollar sign`)
       assert.match(label, /EMA 9/)
       if (IDS[i] === shotAt[device]) {
         await row.evaluate((el) => el.scrollIntoView({ block: "center" }))

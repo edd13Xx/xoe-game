@@ -3,6 +3,7 @@
  * Candles, 24h stats, the live book, the tape and the order mapping are all built from the
  * XOE/USD sim price. No network, no real market data. Orders run on the existing SNL paper book.
  */
+import { indicatorSignal, rsiState, type IndicatorSnap } from "./chart-indicators.ts"
 import {
   BOOK_DEPTH,
   BOOK_TICK_MS,
@@ -366,6 +367,9 @@ export function stopProblem(side: DeskSide, trigger: number | null, mark: number
   return null
 }
 
+/** Sim ticker numbers are plain numbers on the desk: no dollar signs (builder rule). */
+export const noDollar = (s: string): string => s.replace(/\$/g, "")
+
 export function fmtPx(n: number): string {
   return n.toFixed(3)
 }
@@ -594,7 +598,7 @@ export function riskAtStop(pos: "long" | "short", equity: number, entry: number,
 }
 
 export function riskLine(r: { usd: number; pct: number }): string {
-  return `If your stop fills you lose about $${r.usd.toFixed(3)} (${r.pct.toFixed(2)}% of sim equity) before fees.`
+  return `If your stop fills you lose about ${r.usd.toFixed(3)} (${r.pct.toFixed(2)}% of sim equity) before fees.`
 }
 
 /** Label for the local desk coach line. Rules only: no network, no AI call, no key; it never places or changes orders. */
@@ -614,6 +618,10 @@ export interface CoachTip {
     | "form-stop-wrong"
     | "form-big-risk"
     | "streak"
+    | "signal-long"
+    | "signal-short"
+    | "signal-watch"
+    | "signal-stretched"
     | "form-ready"
     | "flat"
   tone: CoachTone
@@ -634,6 +642,8 @@ export interface CoachInput {
   fills: readonly Pick<SnlFill, "id" | "action" | "realized" | "fee" | "at">[]
   /** Order form state (only used when flat). `opening` is null unless a market order would open a position. */
   form?: { opening: "long" | "short" | null; bracketOn: boolean; sl: number | null; lots: number }
+  /** RSI 14 and EMA 9 / 21 on the chart's selected timeframe (sim). Optional so older callers keep working. */
+  ind?: IndicatorSnap
 }
 
 /** Share of sim equity above which the coach warns about size. */
@@ -678,6 +688,12 @@ export function coachTip(s: CoachInput): CoachTip {
     if (gauge?.zone === "near-tp") {
       return { id: "near-tp", tone: "good", text: "Close to your take profit. Stick to the plan, or turn on a trailing stop to protect the gain." }
     }
+    if (s.ind && s.ind.rsi != null) {
+      const st = rsiState(s.ind.rsi)
+      if ((s.pos === "long" && st === "overbought") || (s.pos === "short" && st === "oversold")) {
+        return { id: "signal-stretched", tone: "info", text: `RSI ${Math.round(s.ind.rsi)} on ${s.ind.tf} is ${st}: the move against your ${word} may be stretched. A tighter stop or a take profit protects the gain (sim).` }
+      }
+    }
     if (s.trailPct != null) {
       return { id: "trail", tone: "info", text: `Trailing ${s.trailPct}% is on: your stop follows XOE ${s.pos === "long" ? "up" : "down"} and never moves back.` }
     }
@@ -705,6 +721,13 @@ export function coachTip(s: CoachInput): CoachTip {
       tone: "good",
       text: `Good plan: entry plus stop.${risk ? ` If the stop fills you lose about ${risk.pct.toFixed(1)}% of sim equity.` : ""}`,
     }
+  }
+  if (s.ind) {
+    const sig = indicatorSignal(s.ind)
+    if (sig.kind === "long") return { id: "signal-long", tone: "good", text: `${sig.text} Plan the stop first.` }
+    if (sig.kind === "short") return { id: "signal-short", tone: "good", text: `${sig.text} Plan the stop first.` }
+    if (sig.kind === "watch") return { id: "signal-watch", tone: "info", text: sig.text }
+    if (sig.kind === "neutral") return { id: "flat", tone: "info", text: `${sig.text} Plan first: tick TP/SL and size with Risk 1%.` }
   }
   return { id: "flat", tone: "info", text: "No position yet. Plan first: tick TP/SL, pick a stop, then size with Risk 1%. Or set a price alert and wait." }
 }
