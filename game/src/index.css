@@ -3374,3 +3374,10 @@ path.pd-ind-vwap { stroke: #7dd3fc; stroke-dasharray: 5 3; opacity: 0.9; }
   .xo-afterimage, .dash-speedlines, .xo-thruster-flare { display: none; }
   .fight-xo .xo-dash-body.is-dashing { animation: xo-dash-reduced var(--dash-ms, 700ms) steps(1, end) both; }
 }
+
+/* Timeframe row (v19 hackathon): wraps cleanly, every button keeps a 44px touch target on phone portrait and landscape */
+.pd-seg.pd-seg-tf { flex-wrap: wrap; max-width: 100%; row-gap: 3px; }
+.pd-seg.pd-seg-tf .pd-seg-btn { min-height: 44px; min-width: 44px; padding: 0 9px; font-size: 0.8rem; }
+@media (pointer: coarse) {
+  .pd-seg.pd-seg-tf .pd-seg-btn { min-height: 48px; min-width: 48px; }
+}

@@ -30,8 +30,12 @@ export function useBox(fallbackW = 320, fallbackH = 260) {
 function pad2(n: number) {
   return String(n).padStart(2, "0")
 }
-function fmtTime(t: number) {
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+/** Axis label: clock time for frames up to 4h, a date for 1D and longer (spacing > 12h between bars). */
+function fmtTime(t: number, spanMs: number) {
   const d = new Date(t)
+  if (spanMs >= 20 * 86_400_000) return `${MONTHS[d.getUTCMonth()]} ${String(d.getUTCFullYear()).slice(2)}`
+  if (spanMs >= 12 * 3_600_000) return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`
   return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`
 }
 
@@ -101,6 +105,7 @@ export function ProCandleChart({
   }
   const hc = hover != null ? candles[hover] : undefined
   const shown = hc ?? last
+  const barSpan = candles.length > 1 ? candles[candles.length - 1]!.t - candles[candles.length - 2]!.t : 60_000
   const labelEvery = Math.max(1, Math.round(70 / Math.max(slot, 1)))
   const emaF = indicators ? emaSeries(candles, EMA_FAST) : []
   const emaS = indicators ? emaSeries(candles, EMA_SLOW) : []
@@ -203,7 +208,7 @@ export function ProCandleChart({
         {candles.map((c, i) =>
           i % labelEvery === 0 && (i + 0.5) * slot < plotW - 20 && (i + 0.5) * slot > 22 ? (
             <text key={`x${c.t}`} x={(i + 0.5) * slot} y={H - 4} textAnchor="middle" className="pd-axis">
-              {fmtTime(c.t)}
+              {fmtTime(c.t, barSpan)}
             </text>
           ) : null,
         )}
@@ -235,7 +240,7 @@ export function ProCandleChart({
             </text>
             <rect x={Math.min(plotW - 40, Math.max(0, (hover + 0.5) * slot - 20))} y={H - TIME_H + 1} width={40} height={16} rx={4} className="pd-cross-tag" />
             <text x={Math.min(plotW - 20, Math.max(20, (hover + 0.5) * slot))} y={H - 6} textAnchor="middle" className="pd-cross-text">
-              {fmtTime(hc.t)}
+              {fmtTime(hc.t, barSpan)}
             </text>
           </g>
         ) : null}

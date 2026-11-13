@@ -7,7 +7,11 @@ import {
   PRO_PAIR,
   PRO_TIMEFRAMES,
   advanceLiveBars,
-  aggregateBars,
+  chartBars,
+  seedHistoryBars,
+  periodStart,
+  TF_LABEL,
+  TF_VISIBLE,
   amountFromLots,
   bracketGauge,
   COACH_LABEL,
@@ -227,11 +231,20 @@ export function ProDesk({
   }, [trailPct, liveSnl, mark])
   const snap = snlSessionBreakdown(liveSnl, mark)
   const stats = useMemo(() => stats24h(bars), [bars])
+  // Long frames (4h, 1D, 1W, 1M) get seeded coarse history in front of the live minute bars. It is rebuilt only when the
+  // first live period changes, so it stays steady between price ticks.
+  const firstBar = bars[0]
+  const historyKey = firstBar ? periodStart(firstBar.t, tf) : 0
+  const firstOpenRef = useRef(firstBar?.o ?? mark)
+  firstOpenRef.current = firstBar?.o ?? mark
+  const history = useMemo(
+    () => seedHistoryBars(tf, firstOpenRef.current, historyKey || Date.now()),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [tf, historyKey],
+  )
   const shownBars = useMemo(() => {
-    const all = aggregateBars(bars, tf)
-    const want = tf === "1h" ? 72 : 64
-    return all.slice(-want)
-  }, [bars, tf])
+    return chartBars(bars, tf, history).slice(-TF_VISIBLE[tf])
+  }, [bars, tf, history])
 
   const action = deskAction(side, liveSnl)
   const maxLots = maxLotsFor(side, liveSnl, mark)
@@ -496,10 +509,10 @@ export function ProDesk({
       <div className="pd-grid" data-panel={panel}>
         <section className="pd-panel pd-glass pd-chart-panel" aria-label="Chart">
           <div className="pd-toolbar">
-            <div className="pd-seg" role="group" aria-label="Timeframe">
+            <div className="pd-seg pd-seg-tf" role="group" aria-label="Chart timeframe" data-testid="pd-timeframes">
               {PRO_TIMEFRAMES.map((id) => (
-                <button key={id} type="button" className={`pd-seg-btn${tf === id ? " on" : ""}`} aria-pressed={tf === id} onClick={() => setTf(id)}>
-                  {id}
+                <button key={id} type="button" className={`pd-seg-btn${tf === id ? " on" : ""}`} aria-pressed={tf === id} aria-label={TF_LABEL[id].name} data-tf={id} onClick={() => setTf(id)}>
+                  {TF_LABEL[id].text}
                 </button>
               ))}
             </div>

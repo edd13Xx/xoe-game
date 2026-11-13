@@ -18,10 +18,51 @@ import type { SimCandle } from "./sim-candles.ts"
 
 export const PRO_DESK_LABEL = "Sim · testnet XOE · no real money"
 export const PRO_PAIR = "XOE/USD"
-export type ProTimeframe = "1m" | "5m" | "15m" | "1h"
-export const PRO_TIMEFRAMES: readonly ProTimeframe[] = ["1m", "5m", "15m", "1h"]
+/** "1mo" is the monthly chart (shown as 1M); "1m" is one minute. */
+export type ProTimeframe = "1m" | "5m" | "15m" | "30m" | "1h" | "4h" | "1D" | "1W" | "1mo"
+export const PRO_TIMEFRAMES: readonly ProTimeframe[] = ["1m", "5m", "15m", "30m", "1h", "4h", "1D", "1W", "1mo"]
 export const MINUTE_MS = 60_000
-export const TF_MINUTES: Record<ProTimeframe, number> = { "1m": 1, "5m": 5, "15m": 15, "1h": 60 }
+/** Fixed-length frames in minutes. Weekly and monthly are calendar-aligned (see periodStart). */
+export const TF_MINUTES: Record<Exclude<ProTimeframe, "1W" | "1mo">, number> = { "1m": 1, "5m": 5, "15m": 15, "30m": 30, "1h": 60, "4h": 240, "1D": 1440 }
+/** Button text and screen-reader name per timeframe. */
+export const TF_LABEL: Record<ProTimeframe, { text: string; name: string }> = {
+  "1m": { text: "1m", name: "1 minute" },
+  "5m": { text: "5m", name: "5 minutes" },
+  "15m": { text: "15m", name: "15 minutes" },
+  "30m": { text: "30m", name: "30 minutes" },
+  "1h": { text: "1h", name: "1 hour" },
+  "4h": { text: "4h", name: "4 hours" },
+  "1D": { text: "1D", name: "1 day" },
+  "1W": { text: "1W", name: "1 week" },
+  "1mo": { text: "1M", name: "1 month" },
+}
+/** Bars kept on screen per timeframe. */
+export const TF_VISIBLE: Record<ProTimeframe, number> = { "1m": 64, "5m": 64, "15m": 64, "30m": 64, "1h": 72, "4h": 64, "1D": 64, "1W": 52, "1mo": 36 }
+
+/** Start (ms, UTC) of the `tf` period containing `t`. Weeks start Monday 00:00 UTC, months on the 1st. */
+export function periodStart(t: number, tf: ProTimeframe): number {
+  if (tf === "1mo") {
+    const d = new Date(t)
+    return Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 1)
+  }
+  if (tf === "1W") {
+    const day = Math.floor(t / 86_400_000)
+    const dow = (day + 3) % 7 // 1970-01-01 was a Thursday; Monday = 0
+    return (day - dow) * 86_400_000
+  }
+  const span = TF_MINUTES[tf] * MINUTE_MS
+  return Math.floor(t / span) * span
+}
+
+/** Start of the period before the one beginning at `start`. */
+function prevPeriodStart(start: number, tf: ProTimeframe): number {
+  if (tf === "1mo") {
+    const d = new Date(start)
+    return Date.UTC(d.getUTCFullYear(), d.getUTCMonth() - 1, 1)
+  }
+  if (tf === "1W") return start - 7 * 86_400_000
+  return start - TF_MINUTES[tf] * MINUTE_MS
+}
 /** Minutes of seeded history kept (3 days, so the 1h chart has 72 bars). */
 export const SEED_MINUTES = 4320
 export const BOOK_STEPS: readonly number[] = [0.01, 0.05, 0.1]
@@ -81,14 +122,12 @@ export function advanceLiveBars(bars: readonly SimCandle[], price: number, now: 
   return [...bars, fresh].slice(-SEED_MINUTES)
 }
 
-/** Group minute bars into `tf` bars (aligned to the clock). */
+/** Group minute bars into `tf` bars (aligned to the clock / calendar, UTC). */
 export function aggregateBars(bars: readonly SimCandle[], tf: ProTimeframe): SimCandle[] {
-  const k = TF_MINUTES[tf]
-  if (k === 1) return bars.slice()
-  const span = k * MINUTE_MS
+  if (tf === "1m") return bars.slice()
   const out: SimCandle[] = []
   for (const b of bars) {
-    const t = Math.floor(b.t / span) * span
+    const t = periodStart(b.t, tf)
     const cur = out[out.length - 1]
     if (cur && cur.t === t) {
       cur.h = Math.max(cur.h, b.h)
@@ -100,6 +139,66 @@ export function aggregateBars(bars: readonly SimCandle[], tf: ProTimeframe): Sim
     }
   }
   return out
+}
+
+/** Frames whose chart needs older history than the seeded minute window provides. */
+const NEEDS_HISTORY: ReadonlySet<ProTimeframe> = new Set<ProTimeframe>(["4h", "1D", "1W", "1mo"])
+const HISTORY_SEED: Record<string, number> = { "4h": 41, "1D": 42, "1W": 43, "1mo": 44 }
+
+/**
+ * Seeded coarse history for the long frames (4h, 1D, 1W, 1M): `count` bars that end exactly at `endPrice`
+ * in the period just before `firstT`. Same mean-reverting XOE sim feel as the minute seed, with a wider swing
+ * per bar. Deterministic per frame, no network. Sim only.
+ */
+export function seedHistoryBars(tf: ProTimeframe, endPrice: number, firstT: number, count = 64): SimCandle[] {
+  if (!NEEDS_HISTORY.has(tf)) return []
+  const rng = seededRng(HISTORY_SEED[tf]!)
+  const n = Math.max(2, count)
+  const lo = XOE_SIM_MIN + 0.5
+  const hi = XOE_SIM_MAX - 1
+  const approxMin = tf === "1mo" ? 43_200 : tf === "1W" ? 10_080 : TF_MINUTES[tf as "4h" | "1D"]
+  const sigma = Math.min(0.2, 0.04 * Math.sqrt(approxMin / 60))
+  const phi = 0.75
+  const closes = new Array<number>(n)
+  closes[n - 1] = Math.min(hi, Math.max(lo, endPrice))
+  let x = closes[n - 1]! / XOE_SIM_ANCHOR - 1
+  for (let i = n - 2; i >= 0; i--) {
+    const e = (rng() + rng() - 1) * Math.sqrt(6)
+    x = phi * x + e * sigma * Math.sqrt(1 - phi * phi)
+    closes[i] = Math.min(hi, Math.max(lo, XOE_SIM_ANCHOR * (1 + x)))
+  }
+  const starts = new Array<number>(n)
+  let st = prevPeriodStart(periodStart(firstT, tf), tf)
+  for (let i = n - 1; i >= 0; i--) {
+    starts[i] = st
+    st = prevPeriodStart(st, tf)
+  }
+  const bars: SimCandle[] = []
+  for (let i = 0; i < n; i++) {
+    const c = closes[i]!
+    const o = i === 0 ? c * (1 + (rng() - 0.5) * 0.02) : closes[i - 1]!
+    const wick = sigma * 0.35
+    bars.push({
+      t: starts[i]!,
+      o,
+      h: Math.max(o, c) * (1 + rng() * wick),
+      l: Math.min(o, c) * (1 - rng() * wick),
+      c,
+      v: +((5 + (Math.abs(c - o) / Math.max(o, 1e-6)) * 600 + rng() * 14) * (approxMin / 5)).toFixed(2),
+    })
+  }
+  return bars
+}
+
+/**
+ * Candles for `tf`: the minute bars aggregated, with the seeded coarse history in front for the long frames.
+ * `history` comes from seedHistoryBars (kept by the caller so it stays stable between price ticks).
+ */
+export function chartBars(minuteBars: readonly SimCandle[], tf: ProTimeframe, history: readonly SimCandle[] = []): SimCandle[] {
+  const agg = aggregateBars(minuteBars, tf)
+  const first = agg[0]
+  if (!first || history.length === 0) return agg
+  return [...history.filter((h) => h.t < first.t), ...agg]
 }
 
 export interface Stats24 {

@@ -4,6 +4,12 @@ import {
   SEED_MINUTES,
   advanceLiveBars,
   aggregateBars,
+  chartBars,
+  periodStart,
+  seedHistoryBars,
+  TF_LABEL,
+  TF_VISIBLE,
+  PRO_TIMEFRAMES,
   amountFromLots,
   deskAction,
   depthSeries,
@@ -198,5 +204,76 @@ describe("pro desk bracket gauge", () => {
     expect(through.side).toBe("long")
     expect(through.lots).toBe(2)
     expect(through.orders[0]!.status).toBe("filled")
+  })
+
+  describe("timeframes 1m to 1M", () => {
+    const T_END = Date.UTC(2026, 10, 13, 8, 30) // Fri 13 Nov 2026 08:30 UTC
+    const minutes = seedMinuteBars(10, T_END)
+
+    it("offers 1m, 5m, 15m, 30m, 1h, 4h, 1D, 1W and 1M with plain names", () => {
+      expect(PRO_TIMEFRAMES.map((id) => TF_LABEL[id].text)).toEqual(["1m", "5m", "15m", "30m", "1h", "4h", "1D", "1W", "1M"])
+      expect(TF_LABEL["1mo"].name).toBe("1 month")
+      expect(TF_LABEL["1m"].name).toBe("1 minute")
+      expect(new Set(PRO_TIMEFRAMES.map((id) => TF_LABEL[id].name)).size).toBe(PRO_TIMEFRAMES.length)
+    })
+
+    it("aligns periods: 30m/4h to the clock, weeks to Monday, months to the 1st (UTC)", () => {
+      expect(periodStart(T_END, "30m")).toBe(Date.UTC(2026, 10, 13, 8, 30))
+      expect(periodStart(T_END, "4h")).toBe(Date.UTC(2026, 10, 13, 8, 0))
+      expect(periodStart(T_END, "1D")).toBe(Date.UTC(2026, 10, 13))
+      expect(new Date(periodStart(T_END, "1W")).getUTCDay()).toBe(1)
+      expect(periodStart(T_END, "1W")).toBe(Date.UTC(2026, 10, 9))
+      expect(periodStart(T_END, "1mo")).toBe(Date.UTC(2026, 10, 1))
+      expect(periodStart(Date.UTC(2026, 0, 31, 23, 59), "1mo")).toBe(Date.UTC(2026, 0, 1))
+    })
+
+    it("aggregates every frame without losing range or volume and with clean open/close", () => {
+      for (const tf of PRO_TIMEFRAMES) {
+        const a = aggregateBars(minutes, tf)
+        expect(a.reduce((s, b) => s + b.v, 0)).toBeCloseTo(minutes.reduce((s, b) => s + b.v, 0), 0)
+        expect(Math.max(...a.map((b) => b.h))).toBeCloseTo(Math.max(...minutes.map((b) => b.h)), 9)
+        expect(Math.min(...a.map((b) => b.l))).toBeCloseTo(Math.min(...minutes.map((b) => b.l)), 9)
+        expect(a[0]!.o).toBe(minutes[0]!.o)
+        expect(a[a.length - 1]!.c).toBe(minutes[minutes.length - 1]!.c)
+        for (let i = 1; i < a.length; i++) expect(a[i]!.t).toBeGreaterThan(a[i - 1]!.t)
+        for (const b of a) {
+          expect(b.h).toBeGreaterThanOrEqual(Math.max(b.o, b.c) - 1e-9)
+          expect(b.l).toBeLessThanOrEqual(Math.min(b.o, b.c) + 1e-9)
+        }
+      }
+      expect(aggregateBars(minutes, "30m").length).toBeLessThan(aggregateBars(minutes, "15m").length)
+      expect(aggregateBars(minutes, "4h").length).toBeLessThan(aggregateBars(minutes, "1h").length)
+    })
+
+    it("adds deterministic seeded history for 4h/1D/1W/1M that joins the live bars and stays in the sim range", () => {
+      for (const tf of ["4h", "1D", "1W", "1mo"] as const) {
+        const first = minutes[0]!
+        const h1 = seedHistoryBars(tf, first.o, first.t)
+        const h2 = seedHistoryBars(tf, first.o, first.t)
+        expect(h1).toEqual(h2)
+        expect(h1).toHaveLength(64)
+        expect(h1[h1.length - 1]!.c).toBeCloseTo(first.o, 9)
+        expect(h1[h1.length - 1]!.t).toBeLessThan(periodStart(first.t, tf) + 1)
+        for (const b of h1) { expect(b.l).toBeGreaterThan(0); expect(b.h).toBeGreaterThanOrEqual(b.l); expect(b.v).toBeGreaterThan(0) }
+        const all = chartBars(minutes, tf, h1)
+        expect(all.length).toBeGreaterThan(40)
+        for (let i = 1; i < all.length; i++) expect(all[i]!.t).toBeGreaterThan(all[i - 1]!.t)
+        expect(all.slice(-TF_VISIBLE[tf]).length).toBeLessThanOrEqual(TF_VISIBLE[tf])
+      }
+      expect(seedHistoryBars("1m", 10, T_END)).toEqual([])
+      expect(seedHistoryBars("1h", 10, T_END)).toEqual([])
+      const m = seedHistoryBars("1mo", 10, T_END)
+      expect(m.map((b) => new Date(b.t).getUTCDate()).every((d) => d === 1)).toBe(true)
+      expect(seedHistoryBars("1W", 10, T_END).every((b) => new Date(b.t).getUTCDay() === 1)).toBe(true)
+    })
+
+    it("keeps the live bar moving on every frame (advanceLiveBars then chartBars)", () => {
+      const next = advanceLiveBars(minutes, 10.4, T_END + 5_000)
+      for (const tf of PRO_TIMEFRAMES) {
+        const h = seedHistoryBars(tf, minutes[0]!.o, minutes[0]!.t)
+        const c = chartBars(next, tf, h)
+        expect(c[c.length - 1]!.c).toBeCloseTo(10.4, 9)
+      }
+    })
   })
 })
