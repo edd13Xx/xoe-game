@@ -14,3 +14,7 @@ Written Fri Nov 13 2026, 7:40 AM CST. Deadline Sat Nov 14, 5:59 PM CST. Rule: ON
 3. 10:30-11:15 README (what/problem/NEAR tech/run/judge steps "do X, see Y"/addresses/screenshots), form description, post draft, MANUAL-STEPS.md.
 4. 11:15-12:15 Screenshots (phone + desktop) and a short mp4 of the demo flow.
 5. 12:15-1:00 PM Final gate run, commit locally. Report to parent. Buffer until 5:59 PM Saturday for Eddie's manual steps (repo, X post, form).
+
+## STATUS (Fri Nov 13, ~8:00 AM CST): working testnet demo DONE ahead of plan
+- Done: clean repo (2 commits, tags pre-hackathon / hackathon-submission), contracts tests 36/36, game 473 tests + typecheck + full playthrough + hook e2e, live testnet attest+claim via demo page (balance 40 -> 190 XOE), screenshots, 21 s mp4, README, DESCRIPTION, X-POST, MANUAL-STEPS, LICENSE.
+- Left: Eddie's approvals/wording, GitHub repo creation + push, X post, form (see MANUAL-STEPS.md). Optional hardening if time: wallet-selector so the player signs their own claim.
