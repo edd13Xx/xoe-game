@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- XOE app icon: the purple XOE orb from the in-code cover art (no vendor logos). -->
+  <defs>
+    <radialGradient id="bg" cx="50%" cy="40%" r="75%">
+      <stop offset="0%" stop-color="#1a1530"/><stop offset="55%" stop-color="#0f1118"/><stop offset="100%" stop-color="#0b0d12"/>
+    </radialGradient>
+    <radialGradient id="glow" cx="50%" cy="45%" r="50%">
+      <stop offset="0%" stop-color="#c4b5fd"/><stop offset="40%" stop-color="#7c5cff"/><stop offset="100%" stop-color="#7c5cff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="core" cx="38%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#f5f3ff"/><stop offset="35%" stop-color="#a78bfa"/><stop offset="100%" stop-color="#5b3fd4"/>
+    </radialGradient>
+    <linearGradient id="hz" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#a78bfa" stop-opacity="0.55"/><stop offset="100%" stop-color="#0b0d12" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g fill="#a78bfa" opacity="0.85">
+    <circle cx="70" cy="80" r="3"/><circle cx="150" cy="44" r="2"/><circle cx="420" cy="70" r="3.2"/>
+    <circle cx="460" cy="170" r="2.2"/><circle cx="48" cy="210" r="2"/><circle cx="360" cy="40" r="2"/>
+  </g>
+  <ellipse cx="256" cy="470" rx="300" ry="90" fill="url(#hz)"/>
+  <path d="M-20 450 Q256 380 532 450 L532 512 L-20 512 Z" fill="#151822"/>
+  <path d="M0 448 Q256 372 512 448" fill="none" stroke="#7c5cff" stroke-width="5" opacity="0.7"/>
+  <circle cx="256" cy="232" r="176" fill="url(#glow)" opacity="0.9"/>
+  <circle cx="256" cy="232" r="118" fill="url(#core)"/>
+  <circle cx="215" cy="191" r="32" fill="#ffffff" fill-opacity="0.45"/>
+  <text x="256" y="252" text-anchor="middle" font-family="Inter, Segoe UI, system-ui, sans-serif" font-size="58" font-weight="800" fill="#0b0d12">XOE</text>
+</svg>

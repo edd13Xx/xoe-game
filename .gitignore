@@ -1,0 +1,14 @@
+node_modules
+dist
+target
+*.log
+.DS_Store
+# never commit keys or credentials
+.near-credentials
+*.pem
+*.key
+words.txt
+game/review/*
+!game/review/route-fixture.json
+game/qa
+/Unknown-Orbital-Engine-XOE-v19*.html

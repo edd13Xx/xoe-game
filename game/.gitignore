@@ -1,0 +1,34 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+/uploads
+
+# v19 generated delivery artifacts
+/XOE-source-v19-2026-11-10.zip
+/Unknown-Orbital-Engine-XOE-v19-2026-11-10.html
+/review/SHA256SUMS.txt
+
+# Intermediate flare GIF frames
+/review/flare-frames/

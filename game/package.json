@@ -1,0 +1,45 @@
+{
+  "name": "xeno-opening",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 4317 --strictPort",
+    "build": "tsc -b && vite build && node scripts/make-standalone.mjs",
+    "typecheck": "tsc -b --pretty false",
+    "test": "vitest run && node --test server/*.test.mjs",
+    "preview": "vite preview --host 127.0.0.1 --port 4317 --strictPort",
+    "accept": "node tests/accept.mjs",
+    "lint": "oxlint",
+    "verify:seed": "node verify.mjs seed",
+    "verify:run": "node verify.mjs run",
+    "verify:screenshot": "node verify.mjs screenshot",
+    "verify:check": "node verify.mjs check",
+    "test:full": "XOE_FAST_CLOCK=1 node review-full-playthrough.mjs",
+    "test:a11y": "node review-accessibility.mjs",
+    "cap:sync": "npx cap sync",
+    "test:webkit": "node review-webkit-iphone.mjs"
+  },
+  "dependencies": {
+    "preact": "^11.2.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.6.0",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/core": "^8.6.0",
+    "@capacitor/ios": "^8.6.0",
+    "@types/node": "^24.19.2",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "axe-core": "^4.14.0",
+    "oxlint": "^1.90.0",
+    "playwright": "^1.65.0",
+    "typescript": "~7.0.2",
+    "vite": "^8.3.6",
+    "vite-plugin-singlefile": "^2.3.4",
+    "vitest": "^5.1.0"
+  }
+}
