@@ -1,12 +1,15 @@
 // XOE x NEAR demo server (TESTNET ONLY). Serves the demo page + the game build, and exposes:
 //   GET  /api/state                 live on-chain state read through NEAR RPC
 //   POST /api/achievement {id,detail}   "game server" role: the attester account records the achievement on-chain
+//   POST /api/coach {context}            Grok AI desk coach (needs XAI_API_KEY in this server's env; otherwise {ok:false})
+//   GET  /api/coach/status               {enabled}
 //   POST /api/claim {achievement}       demo player account claims -> rewards contract mints XOE via the token contract
 // Binds to 127.0.0.1. Keys are read from ~/.near-credentials/testnet and never printed or served.
 import http from "node:http";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { coachReply, makeLimiter } from "./lib/coach.mjs";
 import { accountFor, config, hasKey, snapshot, view, outcomeHash, failure, txUrl } from "./lib/near.mjs";
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -18,6 +21,7 @@ const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".
 const send = (res, code, body, type = "application/json") => { res.writeHead(code, { "content-type": type, "cache-control": "no-store" }); res.end(typeof body === "string" || Buffer.isBuffer(body) ? body : JSON.stringify(body)); };
 const readBody = (req) => new Promise((ok, no) => { let b = ""; req.on("data", (c) => { b += c; if (b.length > 4096) { no(new Error("body too large")); req.destroy(); } }); req.on("end", () => { try { ok(b ? JSON.parse(b) : {}); } catch (e) { no(e); } }); });
 
+const coachLimiter = makeLimiter();
 let queue = Promise.resolve(); // one signed tx at a time per key (nonce safety)
 const serial = (fn) => (queue = queue.then(fn, fn));
 
@@ -31,6 +35,11 @@ async function rewardIdFor(id, detail) {
 async function handle(req, res) {
   const url = new URL(req.url, "http://x");
   if (req.method === "GET" && url.pathname === "/api/state") return send(res, 200, { ...(await snapshot()), explorer: config.explorer, canClaimForDemoPlayer: hasKey(config.demoPlayer) && hasKey(config.attester) });
+  if (req.method === "GET" && url.pathname === "/api/coach/status") return send(res, 200, { enabled: Boolean(process.env.XAI_API_KEY) });
+  if (req.method === "POST" && url.pathname === "/api/coach") {
+    const r = await coachReply(await readBody(req), { limiter: coachLimiter, key: req.socket.remoteAddress || "local" });
+    return send(res, r.status, r.body);
+  }
   if (req.method === "POST" && url.pathname === "/api/achievement") {
     const { id, detail } = await readBody(req);
     const rid = await rewardIdFor(String(id || ""), detail);

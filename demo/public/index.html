@@ -39,6 +39,7 @@
   <h1>XOE × NEAR — Games With Real Economies</h1>
   <span class="pill">Network: <b>NEAR testnet</b> (play money)</span>
   <span class="pill">Built for NEAR HACKATHON 2026</span>
+  <span class="pill" id="coachPill">Grok coach: checking…</span>
 </header>
 <p style="margin:0;padding:10px 16px;border-bottom:1px solid var(--line);color:var(--dim);max-width:1300px;margin-inline:auto">
   <b style="color:var(--fg)">XOE is a Solana coin on Pump Fun that is paired with NEAR (Wrapped NEAR), and it powers XOE: Unknown Orbital Engine</b>, a fast-paced mech game with a built-in <b style="color:var(--fg)">trading-bot simulation that teaches</b> players to trade safely with paper money before they ever risk real funds.
@@ -128,11 +129,29 @@ $("simBtn").onclick = async () => {
   if (!open.length) return toast("All colony rewards already earned for this demo player.");
   await attest("colony_cleared", open[0].id.replace("colony_", ""));
 };
+// Grok AI coach bridge: the game (iframe) asks us, we ask our server (which holds XAI_API_KEY), we answer the game.
+let coachEnabled = null;
+async function coachOn() {
+  if (coachEnabled === null) { try { coachEnabled = (await api("/api/coach/status")).enabled; } catch { coachEnabled = false; } }
+  return coachEnabled;
+}
+async function answerCoach(ev, d) {
+  const reply = (extra) => ev.source.postMessage({ source: "xoe-host", type: "xoe:coach-reply", id: d.id, ...extra }, "*");
+  try {
+    if (!(await coachOn())) return reply({ ok: false });
+    const r = await api("/api/coach", { context: d.context });
+    reply(r.ok ? { ok: true, text: r.text } : { ok: false });
+  } catch { reply({ ok: false }); }
+}
 window.addEventListener("message", (ev) => {
-  const d = ev.data; if (!d || d.source !== "xoe-game" || d.type !== "xoe:achievement") return;
+  const d = ev.data; if (!d || d.source !== "xoe-game") return;
+  if (ev.source !== $("game").contentWindow) return;
+  if (d.type === "xoe:coach-request") return void answerCoach(ev, d);
+  if (d.type !== "xoe:achievement") return;
   if (ev.source !== $("game").contentWindow) return;
   attest(d.id, d.detail);
 });
+coachOn().then((on) => { $("coachPill").innerHTML = on ? "Grok coach: <b>on</b>" : "Grok coach: <b>off</b> (rule-based tips)"; });
 load().catch((e) => toast("State error: " + e.message));
 </script>
 </body>

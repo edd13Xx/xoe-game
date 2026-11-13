@@ -45,6 +45,14 @@ no value.** Nothing here is financial advice or a price or market claim, and no 
 
 Transactions and config: [`docs/TESTNET.md`](docs/TESTNET.md).
 
+## Grok AI coach
+The trade desk's coach tip is rule-based by default. When the game runs inside the demo page **and** the demo server has an xAI key, the tip is answered by **Grok** instead (label **"Grok Bot coach (sim)"**).
+* **How:** after a trading decision (open or close, stop or size change, order-form plan), the game posts a small context (side, size, entry, SL/TP, risk %, P/L %, last result) to the demo page with `postMessage`. The page calls `POST /api/coach` on the demo server, which calls `https://api.x.ai/v1/chat/completions` (default model `grok-4.20-0309-non-reasoning`, override with `XAI_MODEL`) with a short in-universe coach prompt: 1-2 sentences about risk, sizing and stops, paper money only, never financial advice. 6 s timeout, 280-character cap, 12 requests/minute limit.
+* **Key safety:** the key is read only from `process.env.XAI_API_KEY` on the server. It is never in the game HTML, the repo or any response. The game itself makes no network call for the coach.
+* **Fallback:** no key, timeout, error, rate limit, bad reply, or opening the game standalone (`file://`) all keep the rule-based tip, instantly. The demo never breaks.
+* **Try it:** `cd demo && XAI_API_KEY=<your key> npm start`, open `http://127.0.0.1:4400`, press **XOE trade desk** in the game, wait a second. → The coach box switches to "Grok Bot coach (sim)" and the page pill says "Grok coach: on". Without the key → rule-based tip and "Grok coach: off".
+* **Test without a key:** `cd demo && npm test` (9 server tests, mocked fetch) and `npm run test:e2e-coach` (real game build through a mock xAI server, both key and no-key cases); `cd game && npx vitest run src/game/grok-coach.test.ts`.
+
 ## How the economy works
 ```
 play XOE ──win──▶ game emits "xoe:achievement" ──▶ attester account: rewards.attest(player, achievement)
@@ -79,8 +87,9 @@ build (`bash contracts/scripts/build.sh`), then `node demo/scripts/deploy-testne
 **D. Play the game.** `game/dist/index.html` runs standalone in any browser. Tap **Start**, follow the tutorial, and use the practice desk (paper money, labelled SIM).
 
 ## Verification
-* Game: `cd game && npm install && npm run typecheck && npm test` → **473 unit tests pass**; `npm run build`, `npm run test:full` (fresh 10-colony playthrough on desktop, phone portrait and landscape with axe accessibility checks), `node review-near-hook.mjs` (the real game emits the achievement event on a colony clear).
+* Game: `cd game && npm install && npm run typecheck && npm test` → **483 unit tests pass**; `npm run build`, `npm run test:full` (fresh 10-colony playthrough on desktop, phone portrait and landscape with axe accessibility checks), `node review-near-hook.mjs` (the real game emits the achievement event on a colony clear).
 * Contracts: `cd contracts && bash scripts/test.sh` → 36 passed.
+* Demo server: `cd demo && npm test` → 9 passed (Grok coach endpoint, mocked fetch).
 
 ## Screenshots and video
 `media/desktop-1-start.png`, `desktop-2-attested.png`, `desktop-3-claimed.png`, `phone-1-demo-top.png`, `phone-2-demo-chain.png`, `phone-3-game.png`, and `media/demo-flow.mp4`.

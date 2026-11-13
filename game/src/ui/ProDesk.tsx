@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react"
+import { GROK_COACH_LABEL, buildCoachContext, coachDecisionKey, requestGrokCoach } from "../game/grok-coach.ts"
 import { BOOK_TICK_MS, bookDecimals, type BookLevel } from "../game/paper-advanced.ts"
 import {
   BOOK_STEPS,
@@ -11,6 +12,7 @@ import {
   bracketGauge,
   COACH_LABEL,
   coachTip,
+  type CoachInput,
   alertLine,
   checkAlerts,
   makeAlert,
@@ -385,8 +387,9 @@ export function ProDesk({
   const riskSlIn = optionalPx(slTxt)
   const riskSl = typeof riskSlIn === "number" ? riskSlIn : null
   const riskNow = showBracket && useBracket ? riskAtStop(action === "short" ? "short" : "long", snap.equity, mark, riskSl, lots) : null
-  // Grok Bot desk coach (sim): local rules only, no network or AI call; it never places or changes orders.
-  const tip = coachTip({
+  // Desk coach (sim). The rule-based tip is always computed and shown first. When the game is embedded in the NEAR demo
+  // page, a Grok answer may replace it (via the host page, see grok-coach.ts). It never places or changes orders.
+  const coachInput: CoachInput = {
     pos: posSide,
     entry: snap.entry,
     mark: snap.mark,
@@ -398,7 +401,27 @@ export function ProDesk({
     trailPct,
     fills: liveSnl.fills,
     form: { opening: showBracket ? (action === "short" ? "short" : "long") : null, bracketOn: useBracket, sl: riskSl, lots },
-  })
+  }
+  const tip = coachTip(coachInput)
+  const coachKey = coachDecisionKey(coachInput, tip.id)
+  const coachInputRef = useRef(coachInput)
+  coachInputRef.current = coachInput
+  const tipRef = useRef(tip)
+  tipRef.current = tip
+  const [grokTip, setGrokTip] = useState<{ key: string; text: string } | null>(null)
+  useEffect(() => {
+    let live = true
+    const t = window.setTimeout(() => {
+      void requestGrokCoach(buildCoachContext(coachInputRef.current, tipRef.current)).then((text) => {
+        if (live && text) setGrokTip({ key: coachKey, text })
+      })
+    }, 700)
+    return () => {
+      live = false
+      window.clearTimeout(t)
+    }
+  }, [coachKey])
+  const grokText = grokTip && grokTip.key === coachKey ? grokTip.text : null
   const chartMarks = [
     ...(snap.entry != null && posSide !== "flat" ? [{ price: snap.entry, kind: "entry" as const, label: "Entry" }] : []),
     ...(bracket.tp != null ? [{ price: bracket.tp, kind: "tp" as const, label: "TP" }] : []),
@@ -446,10 +469,10 @@ export function ProDesk({
         </dl>
       </div>
       <p className="pd-label" data-testid="pd-sim-label">{PRO_DESK_LABEL}</p>
-      <div className={`pd-coach is-${tip.tone}`} data-testid="pd-coach" data-tip={tip.id} role="note" aria-label="Grok Bot desk coach, tips only, never places orders">
-        <span className="pd-coach-k">{COACH_LABEL}</span>
+      <div className={`pd-coach is-${tip.tone}`} data-testid="pd-coach" data-tip={tip.id} data-source={grokText ? "grok" : "rules"} role="note" aria-label="Grok Bot desk coach, tips only, never places orders">
+        <span className="pd-coach-k">{grokText ? GROK_COACH_LABEL : COACH_LABEL}</span>
         <p className="pd-coach-text" data-testid="pd-coach-text" aria-live="polite">
-          {tip.text}
+          {grokText ?? tip.text}
         </p>
       </div>
       {alertToast ? (

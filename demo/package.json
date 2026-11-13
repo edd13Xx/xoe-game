@@ -6,9 +6,11 @@
   "description": "XOE x NEAR HACKATHON demo: game iframe + testnet attester/claim server (near-api-js)",
   "scripts": {
     "start": "node server.mjs",
+    "test": "node --test test/*.test.mjs",
     "demo:cli": "node scripts/demo-run.mjs",
     "state": "node scripts/state.mjs",
-    "capture": "node scripts/capture.mjs"
+    "capture": "node scripts/capture.mjs",
+    "test:e2e-coach": "node scripts/e2e-coach.mjs"
   },
   "dependencies": {
     "@near-js/transactions": "^2.5.1",
