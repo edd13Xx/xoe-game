@@ -8,7 +8,7 @@ import { publicHttpsUrl } from "./public-url.ts"
 
 export const MARKET_REFRESH_MS = 60_000
 
-/** Player-facing ticker name. Feed stays Coinbase XLM-USD; swap this for a later Solana label. */
+/** Player-facing ticker name. Feed stays Coinbase XLM-USD; swap this for a later label. */
 export const TICKER_LABEL = "XOE"
 
 export const XOE_MARKET_LINE =

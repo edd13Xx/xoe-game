@@ -17,7 +17,7 @@ ffmpeg -y -v error \
  [p2]scale=-2:720[ph];
  [bg][ph]overlay=(W-w)/2:0,$F[v1];
  [2:v]trim=2.4:38,setpts=(PTS-STARTPTS)/1.5,scale=1280:720,$F[v2];
- [3:v]trim=1.2:30,setpts=(PTS-STARTPTS)/1.4,scale=1280:720,$F[v3];
+ [3:v]trim=1.2:31.2,setpts=(PTS-STARTPTS)/1.4,scale=1280:720,$F[v3];
  [v0][v1]xfade=transition=fade:duration=0.4:offset=3.2[a];
  [a][v2]xfade=transition=fade:duration=0.4:offset=21.6[b];
  [b][v3]xfade=transition=fade:duration=0.4:offset=44.9[c];

@@ -9,10 +9,10 @@ use std::sync::Arc;
 const ONE_YOCTO: NearToken = NearToken::from_yoctonear(1);
 const LINK_DEPOSIT: NearToken = NearToken::from_millinear(10);
 
-/// Made-up Solana-format addresses (base58 of fixed 32-byte patterns). Not real wallets.
-const SOL_A: &str = "4vJ9JU1bJJE96FWSJKvHsmmFADCg4gpZQff4P3bkLKi"; // 32 bytes of 0x01
-const SOL_B: &str = "8qbHbw2BbbTHBW1sbeqakYXVKRQM8Ne7pLK7m6CVfeR"; // 32 bytes of 0x02
-const SOL_C: &str = "CktRuQ2mttgRGkXJtyksdKHjUdc2C4TgDzyB98oEzy8"; // 32 bytes of 0x03
+/// Made-up NEAR payout addresses (valid NEAR account ids). Not real wallets.
+const PAY_A: &str = "payout-a.near";
+const PAY_B: &str = "payout-b.near";
+const PAY_C: &str = "payout-c.near";
 
 struct Env {
     _sandbox: near_sandbox::Sandbox,
@@ -25,7 +25,6 @@ struct Env {
     cheater: AccountId,
     token: AccountId,
     rewards: AccountId,
-    wnear: AccountId,
 }
 
 fn build(contract_dir: &str) -> Vec<u8> {
@@ -47,11 +46,10 @@ async fn create(sandbox: &near_sandbox::Sandbox, name: &str) -> AccountId {
 }
 
 impl Env {
-    /// Deploys token + rewards + wNEAR mock. per-player cap 250, global cap 400 (base units).
+    /// Deploys token + rewards. per-player cap 250, global cap 400 (base units).
     /// `make_minter=false` leaves the rewards contract without the minter role (to test rollback).
     async fn new(make_minter: bool) -> Env {
-        let (token_wasm, rewards_wasm, wnear_wasm) =
-            (build("xoe-token"), build("xoe-rewards"), build("wnear-mock"));
+        let (token_wasm, rewards_wasm) = (build("xoe-token"), build("xoe-rewards"));
         let sandbox = near_sandbox::Sandbox::start_sandbox().await.unwrap();
         let net = NetworkConfig::from_rpc_url("sandbox", sandbox.rpc_addr.parse().unwrap());
         let signer = Signer::from_secret_key(
@@ -65,7 +63,6 @@ impl Env {
         let cheater = create(&sandbox, "cheater").await;
         let token = create(&sandbox, "xoe").await;
         let rewards = create(&sandbox, "rewards").await;
-        let wnear = create(&sandbox, "wnear").await;
 
         let deploy = |id: AccountId, wasm: Vec<u8>, method: &'static str, args: Value| {
             let signer = signer.clone();
@@ -91,9 +88,8 @@ impl Env {
                    "per_player_cap": "250", "global_cap": "400"}),
         )
         .await;
-        deploy(wnear.clone(), wnear_wasm, "new", json!({})).await;
 
-        let env = Env { _sandbox: sandbox, net, signer, owner, attester, p1, p2, cheater, token, rewards, wnear };
+        let env = Env { _sandbox: sandbox, net, signer, owner, attester, p1, p2, cheater, token, rewards };
         if make_minter {
             let (t, o, r) = (env.token.clone(), env.owner.clone(), env.rewards.clone());
             env.call(&t, &o, "add_minter", json!({"account_id": r}), ONE_YOCTO).await.assert_success();
@@ -141,8 +137,8 @@ impl Env {
         v.parse().unwrap()
     }
 
-    async fn link(&self, who: &AccountId, sol: &str) -> near_api::types::transaction::result::TransactionResult {
-        self.call(&self.rewards, who, "link_solana", json!({"solana_address": sol}), LINK_DEPOSIT).await
+    async fn link(&self, who: &AccountId, payout: &str) -> near_api::types::transaction::result::TransactionResult {
+        self.call(&self.rewards, who, "link_near_address", json!({"near_address": payout}), LINK_DEPOSIT).await
     }
     async fn attest(&self, by: &AccountId, player: &AccountId, ach: &str) -> near_api::types::transaction::result::TransactionResult {
         self.call(&self.rewards, by, "attest", json!({"player": player, "achievement": ach}), NearToken::from_yoctonear(0)).await
@@ -163,32 +159,32 @@ fn expect_fail(res: near_api::types::transaction::result::TransactionResult, nee
 #[tokio::test]
 async fn link_rules() -> testresult::TestResult<()> {
     let e = Env::new(true).await;
-    // invalid Solana address
-    expect_fail(e.link(&e.p1, "not-a-solana-address").await, "Invalid Solana address");
-    expect_fail(e.link(&e.p1, "0x52908400098527886E0F7030069857D2E4169EE7").await, "Invalid Solana address");
+    // invalid NEAR address
+    expect_fail(e.link(&e.p1, "not a valid address").await, "Invalid NEAR address");
+    expect_fail(e.link(&e.p1, "0x52908400098527886E0F7030069857D2E4169EE7").await, "Invalid NEAR address");
     // valid link
-    e.link(&e.p1, SOL_A).await.assert_success();
-    let sol: Option<String> = e.view(&e.rewards, "get_solana_address", json!({"account_id": e.p1})).await;
-    assert_eq!(sol.as_deref(), Some(SOL_A));
-    let back: Option<String> = e.view(&e.rewards, "get_near_account", json!({"solana_address": SOL_A})).await;
+    e.link(&e.p1, PAY_A).await.assert_success();
+    let linked: Option<String> = e.view(&e.rewards, "get_near_address", json!({"account_id": e.p1})).await;
+    assert_eq!(linked.as_deref(), Some(PAY_A));
+    let back: Option<String> = e.view(&e.rewards, "get_near_account", json!({"near_address": PAY_A})).await;
     assert_eq!(back.as_deref(), Some(e.p1.as_str()));
     // duplicate links
-    expect_fail(e.link(&e.p1, SOL_B).await, "already has a linked Solana address");
-    expect_fail(e.link(&e.p2, SOL_A).await, "already linked to another NEAR account");
+    expect_fail(e.link(&e.p1, PAY_B).await, "already has a linked NEAR address");
+    expect_fail(e.link(&e.p2, PAY_A).await, "already linked to another NEAR account");
     // missing deposit
     expect_fail(
-        e.call(&e.rewards, &e.p2, "link_solana", json!({"solana_address": SOL_B}), NearToken::from_yoctonear(0)).await,
+        e.call(&e.rewards, &e.p2, "link_near_address", json!({"near_address": PAY_B}), NearToken::from_yoctonear(0)).await,
         "Attach 0.01 NEAR",
     );
-    e.link(&e.p2, SOL_B).await.assert_success();
+    e.link(&e.p2, PAY_B).await.assert_success();
     Ok(())
 }
 
 #[tokio::test]
 async fn attest_claim_caps_pause() -> testresult::TestResult<()> {
     let e = Env::new(true).await;
-    e.link(&e.p1, SOL_A).await.assert_success();
-    e.link(&e.p2, SOL_B).await.assert_success();
+    e.link(&e.p1, PAY_A).await.assert_success();
+    e.link(&e.p2, PAY_B).await.assert_success();
 
     // non-attester (player attesting themselves, or a random account) is rejected
     expect_fail(e.attest(&e.p1, &e.p1, "boss_beaten").await, "Only the game attester can attest");
@@ -229,7 +225,7 @@ async fn attest_claim_caps_pause() -> testresult::TestResult<()> {
     e.attest(&e.attester, &e.p2, "colony_cleared").await.assert_success();
     e.claim(&e.p2, "colony_cleared").await.assert_success();
     assert_eq!(e.xoe_balance(&e.p2).await, 250);
-    e.link(&e.cheater, SOL_C).await.assert_success();
+    e.link(&e.cheater, PAY_C).await.assert_success();
     e.attest(&e.attester, &e.cheater, "colony_cleared").await.assert_success();
     expect_fail(e.claim(&e.cheater, "colony_cleared").await, "Global cap reached");
     assert_eq!(e.xoe_balance(&e.cheater).await, 0);
@@ -249,7 +245,7 @@ async fn attest_claim_caps_pause() -> testresult::TestResult<()> {
 #[tokio::test]
 async fn failed_mint_rolls_back_claim() -> testresult::TestResult<()> {
     let e = Env::new(false).await; // rewards contract is NOT a minter
-    e.link(&e.p1, SOL_A).await.assert_success();
+    e.link(&e.p1, PAY_A).await.assert_success();
     e.attest(&e.attester, &e.p1, "boss_beaten").await.assert_success();
     let ok: bool = e.claim(&e.p1, "boss_beaten").await.assert_success().json()?;
     assert!(!ok, "callback should report failure");
@@ -261,78 +257,5 @@ async fn failed_mint_rolls_back_claim() -> testresult::TestResult<()> {
     let ok: bool = e.claim(&e.p1, "boss_beaten").await.assert_success().json()?;
     assert!(ok);
     assert_eq!(e.xoe_balance(&e.p1).await, 100);
-    Ok(())
-}
-
-#[tokio::test]
-async fn wnear_mock_bridge_flow() -> testresult::TestResult<()> {
-    let e = Env::new(true).await;
-    let label: String = e.view(&e.wnear, "simulation_label", json!({})).await;
-    assert!(label.starts_with("SIMULATION"));
-    e.link(&e.p1, SOL_A).await.assert_success();
-    e.link(&e.p2, SOL_C).await.assert_success();
-
-    // player wraps 1 NEAR into mock wNEAR
-    e.call(&e.wnear, &e.p1, "near_deposit", json!({}), NearToken::from_near(1)).await.assert_success();
-    let wbal: String = e.view(&e.wnear, "ft_balance_of", json!({"account_id": e.p1})).await;
-    let wbal: u128 = wbal.parse()?;
-    assert!(wbal > 0);
-
-    // rewards contract must be registered on wNEAR mock to receive it; owner allow-lists the token
-    e.call(&e.wnear, &e.owner, "storage_deposit", json!({"account_id": e.rewards}), NearToken::from_millinear(10)).await.assert_success();
-    e.call(&e.token, &e.owner, "storage_deposit", json!({"account_id": e.rewards}), NearToken::from_millinear(10)).await.assert_success();
-
-    // not yet allow-listed -> ft_on_transfer panics -> tokens refunded, no intent
-    e.call(&e.wnear, &e.p1, "ft_transfer_call",
-        json!({"receiver_id": e.rewards, "amount": "1000", "msg": "bridge_to_solana"}), ONE_YOCTO).await.assert_success();
-    let n: String = e.view(&e.rewards, "intents_count", json!({})).await;
-    assert_eq!(n, "0");
-    let after: String = e.view(&e.wnear, "ft_balance_of", json!({"account_id": e.p1})).await;
-    assert_eq!(after.parse::<u128>()?, wbal, "refund expected");
-
-    e.call(&e.rewards, &e.owner, "add_bridge_token", json!({"token": e.wnear}), ONE_YOCTO).await.assert_success();
-    // wrong msg -> refunded
-    e.call(&e.wnear, &e.p1, "ft_transfer_call",
-        json!({"receiver_id": e.rewards, "amount": "1000", "msg": "send_to_mars"}), ONE_YOCTO).await.assert_success();
-    // valid -> simulated intent recorded to the linked Solana address
-    e.call(&e.wnear, &e.p1, "ft_transfer_call",
-        json!({"receiver_id": e.rewards, "amount": "1000", "msg": "bridge_to_solana"}), ONE_YOCTO).await.assert_success();
-    let intent: Value = e.view(&e.rewards, "get_intent", json!({"id": "0"})).await;
-    assert_eq!(intent["solana_address"], SOL_A);
-    assert_eq!(intent["near_account"], e.p1.as_str());
-    assert_eq!(intent["token"], e.wnear.as_str());
-    assert_eq!(intent["amount"], "1000");
-    assert_eq!(intent["status"], "SimulatedPending");
-    assert!(intent["label"].as_str().unwrap().starts_with("SIMULATION"));
-    let held: String = e.view(&e.wnear, "ft_balance_of", json!({"account_id": e.rewards})).await;
-    assert_eq!(held, "1000");
-
-    // earned XOE can be routed the same way (XOE token is allow-listed at init)
-    e.attest(&e.attester, &e.p2, "colony_cleared").await.assert_success();
-    e.claim(&e.p2, "colony_cleared").await.assert_success();
-    e.call(&e.token, &e.p2, "ft_transfer_call",
-        json!({"receiver_id": e.rewards, "amount": "20", "msg": "bridge_to_solana"}), ONE_YOCTO).await.assert_success();
-    let intent: Value = e.view(&e.rewards, "get_intent", json!({"id": "1"})).await;
-    assert_eq!(intent["solana_address"], SOL_C);
-    assert_eq!(intent["token"], e.token.as_str());
-    assert_eq!(e.xoe_balance(&e.p2).await, 30);
-
-    // unlinked sender -> refunded, no intent
-    e.call(&e.wnear, &e.cheater, "near_deposit", json!({}), NearToken::from_near(1)).await.assert_success();
-    e.call(&e.wnear, &e.cheater, "ft_transfer_call",
-        json!({"receiver_id": e.rewards, "amount": "5", "msg": "bridge_to_solana"}), ONE_YOCTO).await.assert_success();
-    let n: String = e.view(&e.rewards, "intents_count", json!({})).await;
-    assert_eq!(n, "2");
-
-    // owner marks the simulated intent done (still nothing leaves the sandbox)
-    expect_fail(e.call(&e.rewards, &e.p1, "sim_mark_intent_completed", json!({"id": "0"}), ONE_YOCTO).await, "Only the owner");
-    e.call(&e.rewards, &e.owner, "sim_mark_intent_completed", json!({"id": "0"}), ONE_YOCTO).await.assert_success();
-    let intent: Value = e.view(&e.rewards, "get_intent", json!({"id": "0"})).await;
-    assert_eq!(intent["status"], "SimulatedCompleted");
-
-    // unwrap remaining mock wNEAR
-    e.call(&e.wnear, &e.p1, "near_withdraw", json!({"amount": (wbal - 1000).to_string()}), ONE_YOCTO).await.assert_success();
-    let left: String = e.view(&e.wnear, "ft_balance_of", json!({"account_id": e.p1})).await;
-    assert_eq!(left, "0");
     Ok(())
 }

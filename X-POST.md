@@ -18,7 +18,7 @@ Win or lose, XOE is building on NEAR. That was the plan before we ever heard abo
 
 ## Optional reply with detail
 ```
-How it works: the game reports a win → attester calls rewards.attest → the player calls claim → the NEP-141 XOE token mints. Contracts: token.xoe-game.testnet / rewards.xoe-game.testnet. Testnet only, play money. #NEARHackathon
+How it works: the game reports a win → attester calls rewards.attest → the player calls claim → the NEP-141 XOE token mints. Contracts: token.xoe-game.testnet / rewards-v2.xoe-game.testnet. Testnet only, play money. #NEARHackathon
 ```
 
 ## Shot list for the video / screenshots (about 20-30 s; `media/demo-flow.mp4` already does 2-4)

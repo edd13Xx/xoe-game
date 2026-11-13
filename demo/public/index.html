@@ -44,13 +44,13 @@
   <h1>XOE × NEAR — Games With Real Economies</h1>
   <span class="pill">Network: <b>NEAR testnet</b> (play money)</span>
   <span class="pill">Built for NEAR HACKATHON 2026</span>
-  <a class="pill" href="https://pump.fun/coin/8aKHbsm11DASWRZLEWrQvwAsXcHXp8mixjJCA5XWpump" target="_blank" rel="noopener">$XOE on pump.fun</a>
+  <a class="pill" href="https://nearblocks.io/token/xoe.token.primitives.near" target="_blank" rel="noopener">$XOE on NEAR</a>
   <button type="button" class="pill" id="musicBtn" aria-pressed="false" title="Original XOE theme (loops, low volume, off by default)">Music: <b>off</b></button>
   <audio id="theme" loop preload="none"><source src="/media/xoe-theme.ogg" type="audio/ogg"><source src="/media/xoe-theme.mp3" type="audio/mpeg"></audio>
   <span class="pill" id="coachPill">Grok coach: checking…</span>
 </header>
 <p style="margin:0;padding:10px 16px;border-bottom:1px solid var(--line);color:var(--dim);max-width:1300px;margin-inline:auto">
-  <b style="color:var(--fg)">XOE is a Solana coin on Pump Fun that is paired with NEAR (Wrapped NEAR), and it powers XOE: Unknown Orbital Engine</b>, a fast-paced mech game with a built-in <b style="color:var(--fg)">trading-bot simulation that teaches</b> players to trade safely with paper money before they ever risk real funds.
+  <b style="color:var(--fg)">XOE is a native NEAR token, live on NEAR mainnet at xoe.token.primitives.near, and it powers XOE: Unknown Orbital Engine</b>, a fast-paced mech game with a built-in <b style="color:var(--fg)">trading-bot simulation that teaches</b> players to trade safely with paper money before they ever risk real funds.
   This page is the NEAR <b>testnet</b> demo: game achievements become on-chain XOE rewards. Play money only.
 </p>
 <main>
@@ -66,7 +66,7 @@
       <div class="dim">Demo player <span id="player">…</span></div>
       <div class="big"><span id="bal">…</span> XOE</div>
       <small class="dim">Total supply <span id="supply">…</span> · issued by rewards <span id="issued">…</span> / cap <span id="gcap">…</span> · this player <span id="pissued">…</span> / <span id="pcap">…</span></small>
-      <div style="margin-top:6px"><small class="dim">Token <a id="tokenLink" target="_blank" rel="noopener"></a><br>Rewards <a id="rewardsLink" target="_blank" rel="noopener"></a></small></div>
+      <div style="margin-top:6px"><small class="dim">Token <a id="tokenLink" target="_blank" rel="noopener"></a><br>Rewards <a id="rewardsLink" target="_blank" rel="noopener"></a><br>Linked NEAR address <b id="linked">…</b> <span class="dim">(set with <code>link_near_address</code>)</span></small></div>
     </div>
     <div class="card" style="margin-top:12px">
       <h2>3 · Achievements → on-chain XOE</h2>
@@ -76,7 +76,7 @@
       </div>
       <div id="ro" class="dim" style="display:none;margin-bottom:8px">Read-only mode: this server has no testnet keys, so it shows live chain state but cannot send transactions. See the README for the recorded run and the keys setup.</div>
       <div id="list" aria-live="polite"></div>
-      <small class="dim">Flow: game win → attester account calls <code>attest</code> → player calls <code>claim</code> → rewards contract calls <code>ft_mint</code> on the XOE token (NEP-141).</small>
+      <small class="dim">Flow: player links a NEAR address (<code>link_near_address</code>) → game win → attester account calls <code>attest</code> → player calls <code>claim</code> → rewards contract calls <code>ft_mint</code> on the XOE token (NEP-141).</small>
     </div>
     <div class="card" style="margin-top:12px">
       <h2>Transactions</h2>
@@ -101,6 +101,7 @@ async function load() {
   $("player").textContent = S.player; $("bal").textContent = S.balance; $("supply").textContent = S.totalSupply;
   $("issued").textContent = S.totalIssued; $("gcap").textContent = S.globalCap; $("pissued").textContent = S.playerIssued; $("pcap").textContent = S.perPlayerCap;
   $("tokenLink").textContent = S.token; $("tokenLink").href = `${S.explorer}/address/${S.token}`;
+  $("linked").textContent = S.linkedNearAddress || "not linked";
   $("rewardsLink").textContent = S.rewardsContract; $("rewardsLink").href = `${S.explorer}/address/${S.rewardsContract}`;
   const rows = S.rewards.filter((r) => r.attested || r.claimed || /^(boss_beaten|game_finished)$/.test(r.id) || r.id.startsWith("colony_")).sort((a, b) => (b.attested - a.attested) || a.id.localeCompare(b.id));
   $("list").innerHTML = rows.map((r) => {

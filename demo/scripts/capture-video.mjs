@@ -172,8 +172,24 @@ async function s3() {
   for (let i = 0; i < 16; i++) { if ((await fr.locator("[data-testid=pd-coach]").getAttribute("data-source").catch(() => "")) === "grok") break; await wait(s, 500); }
   s.mark("coach source " + (await fr.locator("[data-testid=pd-coach]").getAttribute("data-source").catch(() => "")) + ": " + (await fr.locator("[data-testid=pd-coach-text]").innerText().catch(() => "")));
   await wait(s, 4200);
-  // NEAR testnet flow
+  // NEAR testnet flow. With XOE_VIDEO_NO_TX=1 no transaction is sent: the clip shows the live panel with the
+  // already-claimed reward on rewards-v2 and the linked NEAR address (read-only RPC views only).
   await P.evaluate(() => window.scrollTo(0, 0)); await wait(s, 400);
+  if (process.env.XOE_VIDEO_NO_TX) {
+    await cap(s, "NEAR testnet · play money: the player links a NEAR address, then claims straight from the game");
+    await wait(s, 3600);
+    await P.locator("#linked").scrollIntoViewIfNeeded(); await clickEl(s, P.locator("#linked")); await wait(s, 2400);
+    await cap(s, "Rewards contract v2 on testnet: it mints testnet XOE (NEP-141) when a win is attested and claimed");
+    await P.locator("#rewardsLink").hover(); await wait(s, 430);
+    await wait(s, 3600);
+    await cap(s, "Verified end to end: claim minted 50 testnet XOE (290 → 340), a second claim was rejected");
+    await P.locator("#list").scrollIntoViewIfNeeded(); await wait(s, 4200);
+    await cap(s, "Native XOE lives on NEAR mainnet · this rewards demo is testnet only, placeholder amounts");
+    await wait(s, 3600);
+    s.mark("no-tx scene, balance " + (await P.textContent("#bal")) + " linked " + (await P.textContent("#linked")));
+    await cap(s, "");
+    await end(s); return;
+  }
   await cap(s, "NEAR testnet · play money: a colony win is attested on-chain");
   const before = await P.textContent("#bal");
   await clickEl(s, P.locator("#simBtn")); 

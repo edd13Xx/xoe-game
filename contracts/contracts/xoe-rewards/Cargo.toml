@@ -11,8 +11,6 @@ crate-type = ["cdylib", "rlib"]
 
 [dependencies]
 near-sdk = { workspace = true }
-near-contract-standards = { workspace = true }
-bs58 = { version = "0.5", default-features = false, features = ["alloc"] }
 
 [dev-dependencies]
 near-sdk = { workspace = true, features = ["unit-testing"] }

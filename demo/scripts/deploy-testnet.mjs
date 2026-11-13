@@ -45,5 +45,5 @@ const call = async (contractId, methodName, args, deposit = 1n, gas = 30_000_000
 await call(ids.token, "add_minter", { account_id: ids.rewards });
 for (const [id, amt] of rewards) await call(ids.rewards, "set_reward", { achievement: id, amount: fromXoe(amt) });
 for (const who of [ids.rewards, ids.player]) await call(ids.token, "storage_deposit", { account_id: who, registration_only: true }, NEAR / 100n);
-// the demo player must link a (made-up or own) Solana address once so the rewards contract accepts attestations
-console.log("\nNext: from the player account call rewards.link_solana with your own Solana address and 0.01 NEAR,\nthen put the new names in demo/config.json and run `npm start`.");
+// the demo player must link a (made-up or own) NEAR address once so the rewards contract accepts attestations
+console.log("\nNext: from the player account call rewards.link_near_address with your own NEAR address and 0.01 NEAR,\nthen put the new names in demo/config.json and run `npm start`.");

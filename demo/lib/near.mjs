@@ -61,6 +61,7 @@ export async function snapshot(player = config.demoPlayer) {
   }));
   return {
     network: config.network, token: config.token, rewardsContract: config.rewards, player,
+    linkedNearAddress: await view(config.rewards, "get_near_address", { account_id: player }),
     totalSupply: toXoe(supply), balance: toXoe(balance),
     paused: cfg.paused, perPlayerCap: toXoe(cfg.per_player_cap), globalCap: toXoe(cfg.global_cap),
     totalIssued: toXoe(cfg.total_issued), playerIssued: toXoe(await view(config.rewards, "get_player_issued", { account_id: player })),
