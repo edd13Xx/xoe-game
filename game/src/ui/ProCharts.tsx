@@ -317,7 +317,7 @@ export function ProDepthChart({
     return s + ` L ${toward.toFixed(1)} ${yy(prevC).toFixed(1)}`
   }
   return (
-    <svg className="pd-depth" width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" data-depth="1" aria-label="XOE/USD simulated depth chart, cumulative bids and asks">
+    <svg className="pd-depth" width={W} height={H} viewBox={`0 0 ${W} ${H}`} role="img" data-depth="1" aria-label="XOE simulated depth chart, cumulative bids and asks">
       <defs>
         <linearGradient id="pd-dg-b" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor={UP} stopOpacity="0.5" />

@@ -66,7 +66,7 @@ const TRADE_TIPS: readonly XoeTip[] = [
   {
     id: "trade-desk",
     label: "How this desk works",
-    reply: "The ship rides the XOE/USD sim price. Enemy bots are simulated. Fire and dash to defend it. Buy and Sell still work, and nothing here changes your caps or rewards. Pause or ease combat whenever you want.",
+    reply: "The ship rides the XOE sim price. Enemy bots are simulated. Fire and dash to defend it. Buy and Sell still work, and nothing here changes your caps or rewards. Pause or ease combat whenever you want.",
   },
   {
     id: "rsi",

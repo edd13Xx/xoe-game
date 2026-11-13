@@ -20,8 +20,10 @@ import {
   wasGoodDirection,
   type XoeRunState,
 } from "./xoe-lifeblood.ts"
-import { STROOPS_PER_XOE, SIM_USD_PER_XOE, formatPnlSim, formatXoe7 } from "./economy.ts"
+import { STROOPS_PER_XOE, SIM_USD_PER_XOE, formatPnlSim as formatPnlSimRaw, formatXoe7 } from "./economy.ts"
 import { XOE_SIM_ANCHOR, XOE_SIM_LABEL, XOE_SIM_SAFETY, clampXoeSimPrice } from "./xoe-sim-price.ts"
+/** Sim ticker numbers are plain numbers: no dollar sign (hard rule). */
+const formatPnlSim = (n: number, sign = true): string => formatPnlSimRaw(n, sign).replace(/\$/g, "")
 
 /** 0.1 XOE per tap — small enough to stay inside daily caps. */
 export const TRADE_LOT_STROOPS = 1_000_000
@@ -308,4 +310,4 @@ export function formatTradeLine(state: PracticeState): { xoe: string; usd: strin
   }
 }
 
-export const TRADE_DISCLAIMER = `${XOE_SIM_SAFETY}. ${XOE_SIM_LABEL}. Game-only display rate starts at $${SIM_USD_PER_XOE}.00 sim.`
+export const TRADE_DISCLAIMER = `${XOE_SIM_SAFETY}. ${XOE_SIM_LABEL}. Game-only display rate starts at ${SIM_USD_PER_XOE}.00 sim.`

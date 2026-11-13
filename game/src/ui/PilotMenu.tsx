@@ -279,7 +279,7 @@ export function PilotMenu({
         <p className="fine">Suit color is cosmetic. It does not change practice, rescue, or balances.</p>
         <div className="panel" role="region" aria-label="Simulation disclaimer">
           <p id="sim-disclaimer">
-            Trading in this opening uses a testnet XOE/USD sim price. No real money moves. This is not a live account.
+            Trading in this opening uses a testnet XOE sim price. No real money moves. This is not a live account.
           </p>
           <label className="check-row">
             <input

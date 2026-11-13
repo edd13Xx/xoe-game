@@ -309,7 +309,7 @@ function EconomyPanel({ ledger }: { ledger: RewardLedger }) {
       <h3>Economy</h3>
       <p className="econ-warn">{SIM_USD_NOTE}</p>
       <p className="fine">
-        Testnet XOE, play rewards, no cash value. Game-only display rate: 1 XOE = ${SIM_USD_PER_XOE}.00 sim. The XOE/USD sim ticker floats around that rate in play.
+        Testnet XOE, play rewards, no cash value. Game-only display rate: 1 XOE = ${SIM_USD_PER_XOE}.00 sim. The XOE sim ticker floats around that rate in play.
       </p>
       <table className="econ-table">
         <tbody>

@@ -8,10 +8,12 @@
  * easy to tell apart: cash is settled, equity is cash + unrealized P/L.
  */
 import { clampXoeSimPrice } from "./xoe-sim-price.ts"
-import { formatPnlSim } from "./economy.ts"
+import { formatPnlSim as formatPnlSimRaw } from "./economy.ts"
+/** Sim ticker numbers are plain numbers: no dollar sign (hard rule). */
+const formatPnlSim = (n: number, sign = true): string => formatPnlSimRaw(n, sign).replace(/\$/g, "")
 
 export const SNL_SYMBOL = "SNL"
-export const SNL_PAIR_LABEL = "SNL/USD"
+export const SNL_PAIR_LABEL = "SNL · sim"
 export const SNL_LOT = 0.1
 export const SNL_PAPER_CASH = 20
 export const SNL_FEE_TAKER = 0.001

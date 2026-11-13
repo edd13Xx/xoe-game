@@ -270,7 +270,7 @@ export function MusicSettings({
           Ticker {tickerOn ? "on" : "off"}
         </button>
       </label>
-      <p className="fine">Slim Coinbase public prices plus the XOE/USD sim ticker. Offline uses a stand-in walk. Testnet only.</p>
+      <p className="fine">Slim Coinbase public prices plus the XOE sim ticker. Offline uses a stand-in walk. Testnet only.</p>
       <label className="vol-row">
         <span>Fighting difficulty</span>
         <select

@@ -103,7 +103,7 @@ build (`bash contracts/scripts/build.sh`), then `node demo/scripts/deploy-testne
 **D. Play the game.** `game/dist/index.html` runs standalone in any browser. Tap **Start**, follow the tutorial, and use the practice desk (paper money, labelled SIM).
 
 ## Verification
-* Game: `cd game && npm install && npm run typecheck && npm test` → **499 unit tests pass**; `npm run build`, `npm run test:full` (fresh 10-colony playthrough on desktop, phone portrait and landscape with axe accessibility checks), `node review-near-hook.mjs` (the real game emits the achievement event on a colony clear).
+* Game: `cd game && npm install && npm run typecheck && npm test` → **500 unit tests pass**; `npm run build`, `npm run test:full` (fresh 10-colony playthrough on desktop, phone portrait and landscape with axe accessibility checks), `node review-near-hook.mjs` (the real game emits the achievement event on a colony clear).
 * Contracts: `cd contracts && bash scripts/test.sh` → 36 passed.
 * Demo server: `cd demo && npm test` → 10 passed (Grok coach endpoint, mocked fetch, indicator fields).
 

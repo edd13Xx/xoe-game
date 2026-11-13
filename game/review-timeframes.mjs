@@ -54,6 +54,7 @@ for (const device of ["portrait", "landscape", "desktop"]) {
       rec.frames[IDS[i]].rsi = rsiV
       assert.match(label, /RSI 14/)
       const deskText = await page.locator("[data-testid=pro-desk]").innerText()
+      assert.equal(/USD/.test(deskText), false, `${device} ${IDS[i]} desk says USD`)
       assert.equal(/\$/.test(deskText), false, `${device} ${IDS[i]} desk shows a dollar sign`)
       assert.match(label, /EMA 9/)
       if (IDS[i] === shotAt[device]) {

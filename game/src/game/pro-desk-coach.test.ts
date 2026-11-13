@@ -1,11 +1,15 @@
 import { describe, expect, it } from "vitest"
-import { COACH_LABEL, coachTip, losingStreak, type CoachInput } from "./pro-desk.ts"
+import { PRO_PAIR, COACH_LABEL, coachTip, losingStreak, type CoachInput } from "./pro-desk.ts"
 
 const base: CoachInput = { pos: "flat", entry: null, mark: 10, equity: 100, lots: 0, tp: null, sl: null, liq: null, trailPct: null, fills: [] }
 const long = (o: Partial<CoachInput> = {}): CoachInput => ({ ...base, pos: "long", entry: 10, lots: 5, ...o })
 const fill = (id: string, at: number, realized: number, action: "close" | "long" = "close") => ({ id, at, realized, fee: 0.01, action })
 
 describe("Grok Bot desk coach (sim, rules only)", () => {
+  it("sim pair label never implies USD or a dollar sign", () => {
+    expect(PRO_PAIR).toBe("XOE · sim")
+    expect(PRO_PAIR).not.toMatch(/USD|\$/)
+  })
   it("is labelled as a sim tip", () => {
     expect(COACH_LABEL).toBe("Grok Bot tip (sim)")
   })

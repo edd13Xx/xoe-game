@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { formatPnlSim } from "../game/economy.ts"
+import { formatPnlSim as formatPnlSimRaw } from "../game/economy.ts"
 import { formatXoeTickPrice } from "../game/xoe-sim-price.ts"
 import { buildSimDepth, buildSimTape, terminalCandles, type CandleInterval, type SimCandle } from "../game/sim-candles.ts"
 import {
@@ -21,6 +21,8 @@ import {
   type SnlBook,
   type SnlOrderType,
 } from "../game/snl-listing.ts"
+/** Sim ticker numbers are plain numbers: no dollar sign (hard rule). */
+const formatPnlSim = (n: number, sign = true): string => formatPnlSimRaw(n, sign).replace(/\$/g, "")
 
 const ACTIONS: readonly { id: SnlAction; label: string }[] = [
   { id: "long", label: "Long" },
@@ -125,7 +127,7 @@ export function SnlListing({
         <p className="snl-price">
           {SNL_PAIR_LABEL} {formatXoeTickPrice(px)}
         </p>
-        <span className="fine">Tracks XOE/USD sim · {SNL_LOT} lot</span>
+        <span className="fine">Tracks the XOE sim · {SNL_LOT} lot</span>
       </div>
       <p className="fine">{SNL_DISCLAIMER}</p>
 

@@ -467,7 +467,7 @@ export function ProDesk({
       data-entry={snap.entry ?? ""}
       data-mark={mark.toFixed(3)}
     >
-      <div className="pd-head pd-glass" role="group" aria-label="XOE/USD market summary">
+      <div className="pd-head pd-glass" role="group" aria-label="XOE sim market summary">
         <div className="pd-pair">
           <span className="pd-pair-name">{PRO_PAIR}</span>
           <span className="pd-sim-chip">SIM</span>
@@ -635,7 +635,7 @@ export function ProDesk({
             </button>
           </div>
           <label className={`pd-field${pickedClass}`} ref={priceFieldRef} data-testid="pd-price-field" data-picked={pick?.fresh ? "1" : "0"}>
-            <span>{otype === "stop" ? "Trigger (USD)" : "Price (USD)"}</span>
+            <span>{otype === "stop" ? "Trigger" : "Price"}</span>
             {otype === "limit" ? (
               <input value={limitTxt} onChange={(e) => editPrice(e.target.value)} inputMode="decimal" placeholder={fmtPx(mark)} aria-label="Limit price" />
             ) : otype === "stop" ? (

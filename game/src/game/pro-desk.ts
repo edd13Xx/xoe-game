@@ -18,7 +18,7 @@ import { seededRng } from "./ticker-play.ts"
 import type { SimCandle } from "./sim-candles.ts"
 
 export const PRO_DESK_LABEL = "Sim · testnet XOE · no real money"
-export const PRO_PAIR = "XOE/USD"
+export const PRO_PAIR = "XOE · sim"
 /** "1mo" is the monthly chart (shown as 1M); "1m" is one minute. */
 export type ProTimeframe = "1m" | "5m" | "15m" | "30m" | "1h" | "4h" | "1D" | "1W" | "1mo"
 export const PRO_TIMEFRAMES: readonly ProTimeframe[] = ["1m", "5m", "15m", "30m", "1h", "4h", "1D", "1W", "1mo"]

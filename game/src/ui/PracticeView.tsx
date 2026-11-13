@@ -21,7 +21,7 @@ import {
   XOE_UNIT,
   healthFraction,
 } from "../game/xoe-lifeblood.ts"
-import { formatPnlSim, formatXoe7 } from "../game/economy.ts"
+import { formatPnlSim as formatPnlSimRaw, formatXoe7 } from "../game/economy.ts"
 import { XOE_SIM_LABEL, XOE_SIM_SAFETY } from "../game/xoe-sim-price.ts"
 import type { GameState } from "../game/opening.ts"
 import { DialogueMenu, GrokStatus } from "./DialogueMenu.tsx"
@@ -32,6 +32,8 @@ import { SnlListing } from "./SnlListing.tsx"
 import type { SnlAction, SnlSide } from "../game/snl-listing.ts"
 import { readFightDifficulty } from "../game/combat.ts"
 import { getLocalStore } from "../game/safe-storage.ts"
+/** Sim ticker numbers are plain numbers: no dollar sign (hard rule). */
+const formatPnlSim = (n: number, sign = true): string => formatPnlSimRaw(n, sign).replace(/\$/g, "")
 
 export function PracticeView({
   state,
@@ -140,7 +142,7 @@ export function PracticeView({
           {zoe.status ? <p role="status">{zoe.status}</p> : null}
           <DialogueSpeaker line={zoe.speak} />
           <p>
-            This is a live XOE/USD sim trade. Buy and sell stay off until you resume. Each tap is 0.1 XOE at the floating sim price.
+            This is a live XOE sim trade. Buy and sell stay off until you resume. Each tap is 0.1 XOE at the floating sim price.
           </p>
           <DialogueMenu mode={state.dialogueMode} onMode={onMode} onGrok={onGrok} />
           <GrokStatus open={state.grokOfferOpen} onDecline={onDecline} />
@@ -242,7 +244,7 @@ export function FightTradeStrip({
   return (
     <div className="fight-trade" aria-label="XOE trade">
       <p className="fine">
-        XOE/USD {formatPnlSim(price, false)} · P/L {formatPnlSim(pnlUsd, true)} · {XOE_SIM_SAFETY}
+        XOE sim {formatPnlSim(price, false)} · P/L {formatPnlSim(pnlUsd, true)} · {XOE_SIM_SAFETY}
       </p>
       <div className="menu-row">
         <button type="button" className="touch-btn" disabled={!canBuyNow} onClick={onBuy}>

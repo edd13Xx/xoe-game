@@ -43,7 +43,7 @@ export const TUTORIAL_STEPS: readonly TutorialStep[] = [
   {
     id: "paper",
     title: "XOE trading basics",
-    body: "Practice buys and sells use the live XOE/USD sim price while you fly. Nothing real moves. Scores stay on this device. Back up seeds offline on paper or metal. If someone asks for a seed phrase — that’s a hard no. We never ask for a real seed.",
+    body: "Practice buys and sells use the live XOE sim price while you fly. Nothing real moves. Scores stay on this device. Back up seeds offline on paper or metal. If someone asks for a seed phrase — that’s a hard no. We never ask for a real seed.",
   },
 ] as const
 

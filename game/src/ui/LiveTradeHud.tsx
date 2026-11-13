@@ -1,7 +1,7 @@
 import { TradeResultCard } from "./TradeResultCard.tsx"
 import { useEffect, useRef, useState, type ReactNode } from "react"
 import { sparkPoints } from "../game/live-ticker.ts"
-import { formatPnlSim, formatXoe7 } from "../game/economy.ts"
+import { formatPnlSim as formatPnlSimRaw, formatXoe7 } from "../game/economy.ts"
 import {
   canBuy,
   canSell,
@@ -15,6 +15,8 @@ import {
   formatXoeTickPrice,
   lerpPrice,
 } from "../game/xoe-sim-price.ts"
+/** Sim ticker numbers are plain numbers: no dollar sign (hard rule). */
+const formatPnlSim = (n: number, sign = true): string => formatPnlSimRaw(n, sign).replace(/\$/g, "")
 
 /**
  * Always-visible XOE/USD sim HUD for the flying world: ticking price, scrolling
@@ -91,7 +93,7 @@ export function LiveTradeHud({
           </svg>
         ) : null}
         <div className={`live-trade-quote${flash ? ` flash-${flash}` : tickUp ? " up" : " down"}`}>
-          <strong>XOE/USD</strong>
+          <strong>XOE · sim</strong>
           <span className="live-trade-price">
             {formatXoeTickPrice(shown)}
             <span className="live-trade-dir" aria-hidden="true">{tickUp ? " ▲" : " ▼"}</span>
