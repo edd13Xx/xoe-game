@@ -1,4 +1,5 @@
 import { focusSceneEntry } from "./ui/scene-entry-focus.ts"
+import { announceAchievement } from "./game/near-hook.ts"
 import { cancelGrokRequests } from "./game/grok-requests.ts"
 import { settlePaperSession } from "./game/paper-session.ts"
 import { SoundChip } from "./ui/SoundChip.tsx"
@@ -316,6 +317,7 @@ function Game() {
       const elapsed =
         lessonStartedAt.current != null ? Math.max(1, Date.now() - lessonStartedAt.current) : null
       recordColonyBest(store, last, state.arcadeScore, elapsed)
+      announceAchievement("colony_cleared", last)
       noteColonyClearForSideMissions(store)
       noteColonyClearForVoiceReminder(store)
       setFounder(recordColonyProgress(store, state.clearedColonies, COLONIES.map((c) => c.id)).founderBadge)
@@ -323,6 +325,10 @@ function Game() {
     }
     prevClearedRef.current = n
   }, [state.clearedColonies, state.arcadeScore])
+
+  useEffect(() => {
+    if (state.phase === "ending") announceAchievement("game_finished", "ending")
+  }, [state.phase])
 
   // v18.2: the header shows what is really answering: "Live Grok Bot: connected", "Built-in AI", or a problem.
   const [liveTick, setLiveTick] = useState(0)

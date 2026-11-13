@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>XOE x NEAR testnet demo</title>
+<style>
+  :root{color-scheme:dark;--bg:#0b0a1a;--card:#15132b;--line:#2c2850;--fg:#eceaff;--dim:#9a96c8;--cy:#35e0ff;--gold:#ffcc4d;--ok:#4ade80;--bad:#ff6b6b}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.45 system-ui,sans-serif}
+  header{padding:12px 16px;border-bottom:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px 16px;align-items:center}
+  h1{font-size:18px;margin:0}
+  .pill{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:2px 10px;color:var(--dim)}
+  .pill b{color:var(--cy)}
+  main{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr);gap:12px;padding:12px;max-width:1300px;margin:0 auto}
+  @media(max-width:860px){main{grid-template-columns:1fr}.chain{order:-1}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+  h2{font-size:14px;margin:0 0 8px;color:var(--cy);letter-spacing:.04em;text-transform:uppercase}
+  iframe{width:100%;height:640px;border:0;border-radius:8px;background:#000}
+  @media(max-width:860px){iframe{height:560px}}
+  .big{font-size:30px;font-weight:700;color:var(--gold)}
+  .row{display:flex;justify-content:space-between;gap:8px;align-items:center;padding:6px 0;border-top:1px solid var(--line)}
+  .row:first-of-type{border-top:0}
+  button{background:#232055;color:var(--fg);border:1px solid #4a45a0;border-radius:8px;padding:8px 12px;min-height:44px;font:inherit;cursor:pointer}
+  button.primary{background:var(--cy);color:#04141a;border-color:var(--cy);font-weight:600}
+  button:disabled{opacity:.4;cursor:default}
+  .tag{font-size:12px;padding:1px 8px;border-radius:99px;border:1px solid var(--line);color:var(--dim)}
+  .tag.att{color:var(--gold);border-color:var(--gold)} .tag.clm{color:var(--ok);border-color:var(--ok)}
+  #log{max-height:220px;overflow:auto;font-size:13px}
+  #log div{padding:4px 0;border-top:1px solid var(--line)}
+  a{color:var(--cy)} small,.dim{color:var(--dim)}
+  #toast{position:sticky;top:0;background:#0e3b2a;border:1px solid var(--ok);border-radius:8px;padding:8px 12px;margin-bottom:8px;display:none}
+  .err{color:var(--bad)}
+  ol{margin:4px 0 0 18px;padding:0}
+</style>
+</head>
+<body>
+<header>
+  <h1>XOE × NEAR — Games With Real Economies</h1>
+  <span class="pill">Network: <b>NEAR testnet</b> (play money)</span>
+  <span class="pill">Built for NEAR HACKATHON 2026</span>
+</header>
+<p style="margin:0;padding:10px 16px;border-bottom:1px solid var(--line);color:var(--dim);max-width:1300px;margin-inline:auto">
+  <b style="color:var(--fg)">XOE is a Solana coin on Pump Fun that is paired with NEAR (Wrapped NEAR), and it powers XOE: Unknown Orbital Engine</b>, a fast-paced mech game with a built-in <b style="color:var(--fg)">trading-bot simulation that teaches</b> players to trade safely with paper money before they ever risk real funds.
+  This page is the NEAR <b>testnet</b> demo: game achievements become on-chain XOE rewards. Play money only.
+</p>
+<main>
+  <section class="card">
+    <h2>1 · Play XOE</h2>
+    <iframe id="game" src="/game/" title="XOE game" allow="autoplay"></iframe>
+    <p class="dim" style="margin:8px 0 0">Clear a colony in the game and it reports the win to this page. No time to play? Use “Simulate colony clear” on the right.</p>
+  </section>
+  <section class="chain">
+    <div id="toast" role="status" aria-live="polite"></div>
+    <div class="card">
+      <h2>2 · Player on NEAR</h2>
+      <div class="dim">Demo player <span id="player">…</span></div>
+      <div class="big"><span id="bal">…</span> XOE</div>
+      <small class="dim">Total supply <span id="supply">…</span> · issued by rewards <span id="issued">…</span> / cap <span id="gcap">…</span> · this player <span id="pissued">…</span> / <span id="pcap">…</span></small>
+      <div style="margin-top:6px"><small class="dim">Token <a id="tokenLink" target="_blank" rel="noopener"></a><br>Rewards <a id="rewardsLink" target="_blank" rel="noopener"></a></small></div>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h2>3 · Achievements → on-chain XOE</h2>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">
+        <button class="primary" id="simBtn">Simulate colony clear</button>
+        <button id="refreshBtn">Refresh from chain</button>
+      </div>
+      <div id="ro" class="dim" style="display:none;margin-bottom:8px">Read-only mode: this server has no testnet keys, so it shows live chain state but cannot send transactions. See the README for the recorded run and the keys setup.</div>
+      <div id="list" aria-live="polite"></div>
+      <small class="dim">Flow: game win → attester account calls <code>attest</code> → player calls <code>claim</code> → rewards contract calls <code>ft_mint</code> on the XOE token (NEP-141).</small>
+    </div>
+    <div class="card" style="margin-top:12px">
+      <h2>Transactions</h2>
+      <div id="log"><small class="dim">Nothing yet.</small></div>
+    </div>
+  </section>
+</main>
+<script>
+const $ = (id) => document.getElementById(id);
+let S = null, busy = false;
+const api = async (path, body) => {
+  const r = await fetch(path, body ? { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) } : undefined);
+  const j = await r.json(); if (!r.ok) throw new Error(j.error || r.status); return j;
+};
+const short = (h) => h.slice(0, 8) + "…";
+const nice = (id) => id.replace(/^colony_/, "Colony: ").replace(/_/g, " ");
+function logLine(html) { const l = $("log"); if (l.querySelector("small")) l.innerHTML = ""; const d = document.createElement("div"); d.innerHTML = html; l.prepend(d); }
+function toast(msg) { const t = $("toast"); t.textContent = msg; t.style.display = "block"; clearTimeout(toast.t); toast.t = setTimeout(() => (t.style.display = "none"), 7000); }
+function link(h, label) { return `<a target="_blank" rel="noopener" href="${S.explorer}/txns/${h.tx}">${label} ${short(h.tx)}</a>`; }
+async function load() {
+  S = await api("/api/state");
+  $("player").textContent = S.player; $("bal").textContent = S.balance; $("supply").textContent = S.totalSupply;
+  $("issued").textContent = S.totalIssued; $("gcap").textContent = S.globalCap; $("pissued").textContent = S.playerIssued; $("pcap").textContent = S.perPlayerCap;
+  $("tokenLink").textContent = S.token; $("tokenLink").href = `${S.explorer}/address/${S.token}`;
+  $("rewardsLink").textContent = S.rewardsContract; $("rewardsLink").href = `${S.explorer}/address/${S.rewardsContract}`;
+  const rows = S.rewards.filter((r) => r.attested || r.claimed || /^(boss_beaten|game_finished)$/.test(r.id) || r.id.startsWith("colony_")).sort((a, b) => (b.attested - a.attested) || a.id.localeCompare(b.id));
+  $("list").innerHTML = rows.map((r) => {
+    const tag = r.claimed ? '<span class="tag clm">claimed</span>' : r.attested ? '<span class="tag att">attested</span>' : '<span class="tag">not earned</span>';
+    const btn = r.attested && !r.claimed ? `<button class="primary" data-claim="${r.id}">Claim ${r.amount} XOE</button>` : `<span class="dim">${r.amount} XOE</span>`;
+    return `<div class="row"><span>${nice(r.id)} ${tag}</span>${btn}</div>`;
+  }).join("");
+  document.querySelectorAll("[data-claim]").forEach((b) => b.addEventListener("click", () => claim(b.dataset.claim)));
+  $("simBtn").disabled = !S.canClaimForDemoPlayer;
+  $("ro").style.display = S.canClaimForDemoPlayer ? "none" : "block";
+}
+async function attest(id, detail) {
+  if (busy) return; busy = true;
+  try {
+    toast(`Recording ${id}${detail ? " (" + detail + ")" : ""} on NEAR testnet…`);
+    const r = await api("/api/achievement", { id, detail });
+    if (r.tx) { logLine(link(r, `attest <b>${r.achievement}</b> ·`)); toast(`Attested on-chain: ${r.achievement}. Press Claim to mint XOE.`); }
+    else toast(`${r.achievement}: ${r.status}`);
+  } catch (e) { logLine(`<span class="err">attest failed: ${e.message}</span>`); toast("Could not record that: " + e.message); }
+  busy = false; await load();
+}
+async function claim(id) {
+  if (busy) return; busy = true;
+  try {
+    toast(`Claiming ${id}… (about 5 s)`);
+    const r = await api("/api/claim", { achievement: id });
+    logLine(link(r, `claim <b>${id}</b> ·`)); toast(`Minted! Balance now ${r.state.balance} XOE.`);
+  } catch (e) { logLine(`<span class="err">claim failed: ${e.message}</span>`); toast("Claim failed: " + e.message); }
+  busy = false; await load();
+}
+$("refreshBtn").onclick = load;
+$("simBtn").onclick = async () => {
+  const open = S.rewards.filter((r) => r.id.startsWith("colony_") && r.id !== "colony_cleared" && !r.attested && !r.claimed);
+  if (!open.length) return toast("All colony rewards already earned for this demo player.");
+  await attest("colony_cleared", open[0].id.replace("colony_", ""));
+};
+window.addEventListener("message", (ev) => {
+  const d = ev.data; if (!d || d.source !== "xoe-game" || d.type !== "xoe:achievement") return;
+  if (ev.source !== $("game").contentWindow) return;
+  attest(d.id, d.detail);
+});
+load().catch((e) => toast("State error: " + e.message));
+</script>
+</body>
+</html>

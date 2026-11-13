@@ -1,0 +1,17 @@
+{
+  "name": "xoe-near-demo",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "XOE x NEAR HACKATHON demo: game iframe + testnet attester/claim server (near-api-js)",
+  "scripts": {
+    "start": "node server.mjs",
+    "demo:cli": "node scripts/demo-run.mjs",
+    "state": "node scripts/state.mjs",
+    "capture": "node scripts/capture.mjs"
+  },
+  "dependencies": {
+    "@near-js/transactions": "^2.5.1",
+    "near-api-js": "^6.5.1"
+  }
+}

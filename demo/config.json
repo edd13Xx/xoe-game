@@ -1,0 +1,11 @@
+{
+  "network": "testnet",
+  "rpc": "https://test.rpc.fastnear.com",
+  "explorer": "https://testnet.nearblocks.io",
+  "token": "token.xoe-game.testnet",
+  "rewards": "rewards.xoe-game.testnet",
+  "owner": "xoe-game.testnet",
+  "attester": "attester.xoe-game.testnet",
+  "demoPlayer": "player1.xoe-game.testnet",
+  "decimals": 18
+}
