@@ -1,3 +1,5 @@
+<p align="center"><img src="media/xoe-coin-logo.jpg" alt="XOE coin logo: purple ringed planet on green" width="140"></p>
+
 # XOE: Unknown Orbital Engine on NEAR
 
 > **Built for NEAR HACKATHON 2026** · Track: **Games With Real Economies** · Network: **NEAR testnet** (play money)
@@ -7,6 +9,9 @@
 <p align="center">
 <img src="media/desktop-3-claimed.png" alt="XOE game next to live NEAR testnet rewards panel" width="720">
 </p>
+
+## The story is already written
+XOE is not a bare demo: it already has an in-depth storyline, playable from the first tap. You pilot XO's mech (the companion calls itself "XOE, Unknown Orbital Engine") across **10 colonies in three chapters**, each a lesson in wallets, keys, fees, scams and phishing. The truth lands soft: you are the key, and every lock you cleared was waiting for you. The keys open a special vault, XO's creation site, and XO gains flight to space and the moons. You choose **Sol or Xelm** and fly toward the **Ragnarok gate**, while a monumental spiritual-mechanical entity approaches the planet. Grok is woven into the narrative, guiding the pilot, and also runs the trading coach (see below). The moons have their own scenes (Xelm aurora and frost spires, Sol blazing horizon and embers).
 
 ## The problem
 New traders learn by losing real money, and most "learn to trade" apps are boring. XOE teaches trading and wallet safety
@@ -23,10 +28,12 @@ mints a testnet XOE token on NEAR when a player earns an achievement.
 | **Demo page + server** | Embeds the game, listens for the game's achievement event, has the attester account record it on-chain with `near-api-js`, and lets the demo player claim and see their XOE balance change on testnet. | `demo/` |
 
 ### The live coin
-$XOE is live on Solana on pump.fun: mint `8aKHbsm11DASWRZLEWrQvwAsXcHXp8mixjJCA5XWpump`, with its pool paired with Wrapped NEAR
+Official XOE coin reference: **[pump.fun/coin/8aKHbsm11DASWRZLEWrQvwAsXcHXp8mixjJCA5XWpump](https://pump.fun/coin/8aKHbsm11DASWRZLEWrQvwAsXcHXp8mixjJCA5XWpump)** (logo above is from that page). $XOE is live on Solana on pump.fun: mint `8aKHbsm11DASWRZLEWrQvwAsXcHXp8mixjJCA5XWpump`, with its pool paired with Wrapped NEAR
 (wNEAR, Solana mint `3ZLekZYq2qkZiSpnSvabjit34tUkjSwD1JFuW9as9wBG`). The NEAR testnet reward contracts in this repo are designed to connect to
 it later (see `contracts/docs/BRIDGE_OPTIONS.md`). **Today they are not connected: this demo uses a separate testnet XOE token with
 no value.** Nothing here is financial advice or a price or market claim, and no mainnet or real funds are touched.
+
+> **Win or lose, XOE is building on NEAR. That was the plan before we ever heard about this hackathon, and it stays the plan after.**
 
 ## NEAR tech used
 * **NEAR testnet**, contracts written in Rust with **near-sdk-rs 5.30** and **near-contract-standards**: **NEP-141** (token), **NEP-145** (storage), **NEP-148** (metadata).
@@ -87,12 +94,14 @@ build (`bash contracts/scripts/build.sh`), then `node demo/scripts/deploy-testne
 **D. Play the game.** `game/dist/index.html` runs standalone in any browser. Tap **Start**, follow the tutorial, and use the practice desk (paper money, labelled SIM).
 
 ## Verification
-* Game: `cd game && npm install && npm run typecheck && npm test` → **483 unit tests pass**; `npm run build`, `npm run test:full` (fresh 10-colony playthrough on desktop, phone portrait and landscape with axe accessibility checks), `node review-near-hook.mjs` (the real game emits the achievement event on a colony clear).
+* Game: `cd game && npm install && npm run typecheck && npm test` → **488 unit tests pass**; `npm run build`, `npm run test:full` (fresh 10-colony playthrough on desktop, phone portrait and landscape with axe accessibility checks), `node review-near-hook.mjs` (the real game emits the achievement event on a colony clear).
 * Contracts: `cd contracts && bash scripts/test.sh` → 36 passed.
 * Demo server: `cd demo && npm test` → 9 passed (Grok coach endpoint, mocked fetch).
 
 ## Screenshots and video
-`media/desktop-1-start.png`, `desktop-2-attested.png`, `desktop-3-claimed.png`, `phone-1-demo-top.png`, `phone-2-demo-chain.png`, `phone-3-game.png`, and `media/demo-flow.mp4`.
+`media/chart-timeframes-portrait-4h.png`, `chart-timeframes-landscape-1W.png` and `chart-timeframes-desktop-1M.png` (paper-desk chart timeframes 1m, 5m, 15m, 30m, 1h, 4h, 1D, 1W, 1M), `media/demo-page-phone-music.png`, `media/desktop-1-start.png`, `desktop-2-attested.png`, `desktop-3-claimed.png`, `phone-1-demo-top.png`, `phone-2-demo-chain.png`, `phone-3-game.png`, `media/demo-flow.mp4` (silent) and `media/demo-flow-music.mp4` (same demo with the original theme).
+
+Music: the original XOE theme, synthesised entirely by code in [`music/make-theme.py`](music/make-theme.py) (no samples, no third-party music): [`media/xoe-theme.mp3`](media/xoe-theme.mp3) / [`.ogg`](media/xoe-theme.ogg), 38 s seamless loop, dark and energetic space-cyber mood, about -16 LUFS. The demo page has a **Music: off/on** toggle (off by default, never autoplays). Demo video with the theme: [`media/demo-flow-music.mp4`](media/demo-flow-music.mp4).
 
 ## What existed before the hackathon vs. what was built for it (disclosure)
 * **Baseline (before):** the XOE game in `game/` (mech game, lessons, paper-money trading desk, PWA) was built before this hackathon, on Solana/Stellar-style paper ledgers with no NEAR code. It is tagged `pre-hackathon`.
@@ -113,5 +122,6 @@ game/       XOE game source (Vite/TypeScript); src/game/near-hook.ts is the only
 contracts/  Rust workspace: xoe-token, xoe-rewards, wnear-mock, sandbox integration tests, docs/BRIDGE_OPTIONS.md
 demo/       Demo page, near-api-js server, scripts (state, demo-run, setup-rewards, deploy-testnet, capture)
 docs/       TESTNET.md (accounts and transactions)
-media/      screenshots and demo video
+media/      screenshots, demo videos, coin logo, original theme (mp3/ogg)
+music/      make-theme.py (code-synthesised theme) and build.sh
 ```

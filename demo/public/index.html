@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>XOE x NEAR testnet demo</title>
+<link rel="icon" type="image/png" href="/favicon.png">
 <style>
   :root{color-scheme:dark;--bg:#0b0a1a;--card:#15132b;--line:#2c2850;--fg:#eceaff;--dim:#9a96c8;--cy:#35e0ff;--gold:#ffcc4d;--ok:#4ade80;--bad:#ff6b6b}
   *{box-sizing:border-box}
@@ -12,6 +13,9 @@
   h1{font-size:18px;margin:0}
   .pill{font-size:12px;border:1px solid var(--line);border-radius:99px;padding:2px 10px;color:var(--dim)}
   .pill b{color:var(--cy)}
+  button.pill{background:none;font:inherit;font-size:12px;cursor:pointer;min-height:28px}
+  button.pill:focus-visible{outline:2px solid var(--cy);outline-offset:2px}
+  @media (pointer:coarse){button.pill,a.pill{min-height:44px;padding:2px 16px;display:inline-flex;align-items:center}}
   main{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(320px,.9fr);gap:12px;padding:12px;max-width:1300px;margin:0 auto}
   @media(max-width:860px){main{grid-template-columns:1fr}.chain{order:-1}}
   .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
@@ -36,9 +40,13 @@
 </head>
 <body>
 <header>
+  <img src="/xoe-coin-logo.png" alt="XOE coin logo" width="36" height="36" style="border-radius:8px">
   <h1>XOE × NEAR — Games With Real Economies</h1>
   <span class="pill">Network: <b>NEAR testnet</b> (play money)</span>
   <span class="pill">Built for NEAR HACKATHON 2026</span>
+  <a class="pill" href="https://pump.fun/coin/8aKHbsm11DASWRZLEWrQvwAsXcHXp8mixjJCA5XWpump" target="_blank" rel="noopener">$XOE on pump.fun</a>
+  <button type="button" class="pill" id="musicBtn" aria-pressed="false" title="Original XOE theme (loops, low volume, off by default)">Music: <b>off</b></button>
+  <audio id="theme" loop preload="none"><source src="/media/xoe-theme.ogg" type="audio/ogg"><source src="/media/xoe-theme.mp3" type="audio/mpeg"></audio>
   <span class="pill" id="coachPill">Grok coach: checking…</span>
 </header>
 <p style="margin:0;padding:10px 16px;border-bottom:1px solid var(--line);color:var(--dim);max-width:1300px;margin-inline:auto">
@@ -153,6 +161,14 @@ window.addEventListener("message", (ev) => {
 });
 coachOn().then((on) => { $("coachPill").innerHTML = on ? "Grok coach: <b>on</b>" : "Grok coach: <b>off</b> (rule-based tips)"; });
 load().catch((e) => toast("State error: " + e.message));
+(() => {
+  const btn = $("musicBtn"), au = $("theme"); au.volume = 0.25;
+  const show = (on) => { btn.setAttribute("aria-pressed", String(on)); btn.innerHTML = "Music: <b>" + (on ? "on" : "off") + "</b>"; };
+  btn.addEventListener("click", () => {
+    if (au.paused) au.play().then(() => show(true)).catch(() => show(false));
+    else { au.pause(); show(false); }
+  });
+})();
 </script>
 </body>
 </html>

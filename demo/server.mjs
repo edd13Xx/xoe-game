@@ -16,7 +16,7 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const GAME_DIR = process.env.XOE_GAME_DIR || path.join(HERE, "..", "game", "dist");
 const PORT = Number(process.env.PORT || 4400);
 const HOST = process.env.HOST || "127.0.0.1";
-const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml", ".webmanifest": "application/manifest+json", ".mp4": "video/mp4" };
+const MIME = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".png": "image/png", ".svg": "image/svg+xml", ".webmanifest": "application/manifest+json", ".mp4": "video/mp4", ".mp3": "audio/mpeg", ".ogg": "audio/ogg", ".jpg": "image/jpeg" };
 
 const send = (res, code, body, type = "application/json") => { res.writeHead(code, { "content-type": type, "cache-control": "no-store" }); res.end(typeof body === "string" || Buffer.isBuffer(body) ? body : JSON.stringify(body)); };
 const readBody = (req) => new Promise((ok, no) => { let b = ""; req.on("data", (c) => { b += c; if (b.length > 4096) { no(new Error("body too large")); req.destroy(); } }); req.on("end", () => { try { ok(b ? JSON.parse(b) : {}); } catch (e) { no(e); } }); });
@@ -63,6 +63,7 @@ async function handle(req, res) {
   let rel = decodeURIComponent(url.pathname);
   let root = path.join(HERE, "public");
   if (rel === "/game") { res.writeHead(302, { location: "/game/" }); return res.end(); }
+  if (rel.startsWith("/media/")) { root = path.join(HERE, "..", "media"); rel = rel.slice(6); }
   if (rel.startsWith("/game/")) { root = GAME_DIR; rel = rel.slice(5); }
   if (rel.endsWith("/")) rel += "index.html";
   const file = path.normalize(path.join(root, rel));

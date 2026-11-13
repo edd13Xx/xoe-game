@@ -1,6 +1,6 @@
 # X demo post (draft, NOT posted)
 
-Replace the two placeholders, attach `media/demo-flow.mp4` (or the 3 screenshots), then post from Eddie's account.
+Replace the two placeholders, attach `media/demo-flow-music.mp4` (the demo video with the original XOE theme under it; `media/demo-flow.mp4` is the silent version) or the screenshots, then post from Eddie's account.
 
 ## Post text (under 280 characters; links count as 23 each)
 ```
@@ -10,6 +10,11 @@ Code: <REPO_LINK>
 Track: Games With Real Economies
 ```
 (about 255 characters with real links; the hackathon file requires: says built at NEAR HACKATHON, tags @NEARProtocol and #NEARHackathon, video or screenshots attached)
+
+## Optional second post in the thread (the closing line)
+```
+Win or lose, XOE is building on NEAR. That was the plan before we ever heard about this hackathon, and it stays the plan after.
+```
 
 ## Optional reply with detail
 ```
