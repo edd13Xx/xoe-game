@@ -1,6 +1,6 @@
 # X demo post (draft, NOT posted)
 
-Replace the two placeholders, attach `media/demo-flow-music.mp4` (the demo video with the original XOE theme under it; `media/demo-flow.mp4` is the silent version) or the screenshots, then post from Eddie's account.
+Replace the two placeholders, attach `media/demo-flow-music.mp4` (the 65 s demo video of real gameplay, the paper desk with RSI/EMA and coach, chart timeframes and the NEAR testnet claim, with the original XOE theme under it; the older 21 s cut is `media/demo-flow-music-v1.mp4`; `media/demo-flow.mp4` is the silent version) or the screenshots, then post from Eddie's account.
 
 ## Post text (under 280 characters; links count as 23 each)
 ```
